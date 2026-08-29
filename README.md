@@ -65,11 +65,10 @@ See the per-app READMEs for full build steps, dependencies, and troubleshooting.
 
 ## Tested hardware
 
-Developed and tested on small-form-factor mini PCs as senders — GMKtec M5 Plus
-(Ryzen 7 5825U / AMD AMF), Dell Pro Slim (Intel Core Ultra / Quick Sync), and a
-lower-power GMKtec G5 (Intel N-series) — streaming to Newline Android panels.
-Any Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the
-software fallback) and any Android 8.0+ display should work.
+Developed and tested on a GMKtec NucBox G5 (Intel Alder Lake N97) — streaming to
+a Samsung Galaxy Tab A9, to simulate a Newline Android panel. Any Windows 10/11
+PC with a hardware H.264 encoder (or enough CPU for the software fallback) and 
+any Android 8.0+ display should work.
 
 ## Privacy
 
