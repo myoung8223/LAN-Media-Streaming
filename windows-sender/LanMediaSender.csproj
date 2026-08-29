@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>LAN Media Sender</AssemblyName>
+    <RootNamespace>LanMediaSender</RootNamespace>
+    <Version>1.0.0</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <!-- Needed by the FFmpeg.AutoGen video encoder (pointer code). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <!-- Pure-C# Opus codec (BSD-licensed, no native DLL). Pinned to the classic
+         1.1.7 API used below (OpusEncoder.Create + array-based Encode). -->
+    <PackageReference Include="Concentus" Version="1.1.7" />
+    <!-- Managed FFmpeg bindings for H.264 video encoding. Requires the FFmpeg 7.1
+         "shared" DLLs next to the exe (only loaded when video mode is used). -->
+    <PackageReference Include="FFmpeg.AutoGen" Version="7.1.1" />
+    <!-- Managed Direct3D11/DXGI bindings for GPU screen capture (call Windows'
+         own d3d11.dll / dxgi.dll; no native binaries shipped). -->
+    <PackageReference Include="Vortice.Direct3D11" Version="3.6.2" />
+    <PackageReference Include="Vortice.DXGI" Version="3.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Also embed the icon so the window/taskbar can use it at runtime. -->
+    <EmbeddedResource Include="app.ico" />
+  </ItemGroup>
+
+</Project>
