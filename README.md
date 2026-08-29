@@ -18,6 +18,23 @@ HDMI" over Wi-Fi or Ethernet.
 * **FOSS.** MIT-licensed (see [LICENSE](LICENSE) and
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
+## Downloads
+
+Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
+`.zip` bundles its own `LICENSE.txt`, `THIRD-PARTY-NOTICES.txt`, and `README.txt`.
+
+- **LAN Media Sender — Windows:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
+  SHA-256: `7549cf5e28de57389bd38ef520846dc2283202a20d7989ee404d5f013f8cd5db`
+- **LAN Media Receiver — Android:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
+  SHA-256: `9cdcd5c0fb0899e0649d1a6c462fb2e03ef151f45f6850b520443e4eae00fb03`
+
+**Verify your download (optional).** Confirm the file's SHA-256 matches the value above:
+
+- Windows (PowerShell): `Get-FileHash "LAN_Media_Sender_Windows_Binary.zip" -Algorithm SHA256`
+- macOS / Linux: `shasum -a 256 "LAN_Media_Sender_Windows_Binary.zip"`
+
+Prefer to build it yourself? See the per-app folders below.
+
 ## Repository layout
 
 ```
@@ -65,10 +82,11 @@ See the per-app READMEs for full build steps, dependencies, and troubleshooting.
 
 ## Tested hardware
 
-Developed and tested on a GMKtec NucBox G5 (Intel Alder Lake N97) — streaming to
-a Samsung Galaxy Tab A9, to simulate a Newline Android panel. Any Windows 10/11
-PC with a hardware H.264 encoder (or enough CPU for the software fallback) and 
-any Android 8.0+ display should work.
+Developed and tested on small-form-factor mini PCs as senders — GMKtec M5 Plus
+(Ryzen 7 5825U / AMD AMF), Dell Pro Slim (Intel Core Ultra / Quick Sync), and a
+lower-power GMKtec G5 (Intel N-series) — streaming to Newline Android panels.
+Any Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the
+software fallback) and any Android 8.0+ display should work.
 
 ## Privacy
 

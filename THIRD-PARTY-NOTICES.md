@@ -11,34 +11,19 @@ travel with both the source and any binary distribution.
 |-----------|---------|---------|
 | NAudio | MIT | https://github.com/naudio/NAudio |
 | Concentus | BSD-3-Clause | https://github.com/lostromb/concentus |
-| FFmpeg.AutoGen | LGPL-3.0 | https://github.com/Ruslan-B/FFmpeg.AutoGen |
+| FFmpeg.AutoGen | MIT | https://github.com/Ruslan-B/FFmpeg.AutoGen |
 | Vortice.Windows (Direct3D11, DXGI) | MIT | https://github.com/amerkoleci/Vortice.Windows |
 | .NET runtime & Windows Forms | MIT | https://github.com/dotnet/runtime, https://github.com/dotnet/winforms |
 
-### FFmpeg (bundled shared libraries)
+### FFmpeg (required at runtime, not distributed)
 
 The sender loads FFmpeg's shared libraries (`avcodec`, `avutil`, `swscale`, and
-their dependencies) at runtime to encode H.264. FFmpeg is licensed under the
-GNU Lesser General Public License (LGPL) version 2.1 or later; builds that
-enable certain optional components are instead under the GNU General Public
-License (GPL) version 2 or later. FFmpeg is © the FFmpeg developers.
-
-  https://ffmpeg.org · https://www.ffmpeg.org/legal.html
-
-FFmpeg is used via **dynamic linking** — it ships as separate `.dll` files that
-can be replaced or rebuilt independently of this application. Redistributing it
-alongside this MIT-licensed app is permitted under the LGPL provided you:
-
-* keep FFmpeg's own license and copyright notices with the binaries;
-* make the corresponding FFmpeg source available (or provide a written offer /
-  link to the exact build you ship); and
-* do not remove the user's ability to substitute a modified FFmpeg.
-
-The FFmpeg DLLs are **not** included in this repository. See
-`windows-sender/README.md` for where to obtain a compatible FFmpeg 7.1
-"shared" build. If you distribute a package that bundles the FFmpeg binaries,
-include that build's `COPYING.*`/`LICENSE.md` files and the matching source (or
-a link to the exact version used).
+their dependencies) at runtime to encode H.264, but this project does **not**
+include or distribute them — the user downloads a compatible FFmpeg build
+separately (see `windows-sender/README.md`). Because FFmpeg is not shipped with
+this project's source or its release binaries, its LGPL/GPL redistribution
+terms are not triggered here. FFmpeg is © the FFmpeg developers and is licensed
+under the LGPL-2.1-or-later (some builds GPL) — https://ffmpeg.org/legal.html.
 
 ## Android Receiver
 
@@ -59,8 +44,9 @@ bundled in the receiver.
 ## MIT License
 
 Applies to **NAudio** (© Mark Heath and contributors), **Vortice.Windows**
-(© Amer Koleci and contributors), and the **.NET runtime & Windows Forms**
-(© .NET Foundation and contributors):
+(© Amer Koleci and contributors), **FFmpeg.AutoGen** (© Ruslan Balanukhin and
+contributors), and the **.NET runtime & Windows Forms** (© .NET Foundation and
+contributors):
 
 ```
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -134,11 +120,11 @@ Gradle and packaged into the APK; if you distribute the APK, include a copy of
 the Apache-2.0 license (e.g. bundle `licenses/Apache-2.0.txt`, downloaded from
 the URL above) or surface it via an in-app "Open-source licenses" screen.
 
-## LGPL — FFmpeg.AutoGen and FFmpeg
+## FFmpeg (not included — user-supplied)
 
-FFmpeg.AutoGen (LGPL-3.0) and the FFmpeg shared libraries (LGPL-2.1-or-later,
-or GPL where so built) are used via dynamic linking. When you distribute
-binaries that include them, include a copy of the applicable LGPL text
-(https://www.gnu.org/licenses/lgpl-3.0.txt and
-https://www.gnu.org/licenses/lgpl-2.1.txt) and satisfy the FFmpeg source-
-availability requirement described in the FFmpeg section above.
+This project does **not** distribute FFmpeg. The Windows sender loads FFmpeg's
+shared libraries at runtime, but the user obtains them separately (see the
+sender's README), so FFmpeg's own redistribution terms are not triggered by
+this project's source or its release binaries. FFmpeg is licensed under the
+LGPL-2.1-or-later (some builds GPL) and remains © the FFmpeg developers —
+https://ffmpeg.org/legal.html.
