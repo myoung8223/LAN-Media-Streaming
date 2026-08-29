@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/text"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Receiver name (enter this on the sender)"
+            android:textColor="@color/muted"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <EditText
+            android:id="@+id/etName"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxLines="1"
+            android:hint="e.g. Room 214"
+            android:textColor="@color/text"
+            android:textColorHint="@color/muted"
+            android:textSize="24sp"
+            android:gravity="center"
+            android:autofillHints="" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Receiver IP address (fallback)"
+            android:textColor="@color/muted"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tvIp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="—"
+            android:textColor="@color/accent"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:fontFamily="monospace"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnRefreshIp"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Refresh address"
+            android:textSize="15sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Port"
+            android:textColor="@color/muted"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <EditText
+            android:id="@+id/etPort"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="45788"
+            android:textColor="@color/text"
+            android:textSize="24sp"
+            android:gravity="center"
+            android:autofillHints="" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Password (optional)"
+            android:textColor="@color/muted"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <EditText
+            android:id="@+id/etPassword"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:hint="leave blank for none"
+            android:textColor="@color/text"
+            android:textColorHint="@color/muted"
+            android:textSize="24sp"
+            android:gravity="center"
+            android:autofillHints="" />
+
+        <CheckBox
+            android:id="@+id/cbEncrypt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Encrypt connection (TLS)"
+            android:textColor="@color/text"
+            android:textSize="18sp" />
+
+        <CheckBox
+            android:id="@+id/cbAutostart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Start listening when the app opens"
+            android:textColor="@color/text"
+            android:textSize="18sp" />
+
+        <CheckBox
+            android:id="@+id/cbBootstart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Start automatically after reboot"
+            android:textColor="@color/text"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btnStartStop"
+            android:layout_width="340dp"
+            android:layout_height="64dp"
+            android:layout_marginTop="16dp"
+            android:text="Start listening"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnMinimize"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="340dp"
+            android:layout_height="52dp"
+            android:layout_marginTop="10dp"
+            android:text="Minimize"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Status"
+            android:textColor="@color/muted"
+            android:textSize="16sp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Stopped"
+            android:textColor="@color/text"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/lblFingerprint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Security fingerprint (verify once on the sender)"
+            android:textColor="@color/muted"
+            android:textSize="15sp"
+            android:gravity="center" />
+
+        <TextView
+            android:id="@+id/tvFingerprint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="—"
+            android:textColor="@color/text"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="For an always-on display, exempt this app from battery optimization."
+            android:textColor="@color/muted"
+            android:textSize="15sp"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btnBattery"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Open app settings"
+            android:textSize="15sp" />
+    </LinearLayout>
+</ScrollView>
