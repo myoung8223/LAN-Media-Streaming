@@ -10,7 +10,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.Button
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.lanmedia.receiver.databinding.ActivityMainBinding
@@ -51,6 +54,7 @@ class MainActivity : AppCompatActivity() {
         }
         b.btnMinimize.setOnClickListener { moveTaskToBack(true) }
         b.btnBattery.setOnClickListener { openBatterySettings() }
+        b.btnAbout.setOnClickListener { showAbout() }
 
         b.cbEncrypt.setOnCheckedChangeListener { _, v ->
             prefs.edit().putBoolean("tls", v).apply()
@@ -154,6 +158,20 @@ class MainActivity : AppCompatActivity() {
     private fun stopService() {
         startService(Intent(this, ReceiverService::class.java).setAction(ReceiverService.ACTION_STOP))
         b.btnStartStop.postDelayed({ refreshUi(); b.tvStatus.text = ReceiverService.lastStatus }, 300)
+    }
+
+    /** Themed About dialog: version, credits, license, and repo link. */
+    private fun showAbout() {
+        val view = layoutInflater.inflate(R.layout.dialog_about, null)
+        view.findViewById<TextView>(R.id.tvAboutVersion).text =
+            "Version " + BuildConfig.VERSION_NAME
+        val dialog = AlertDialog.Builder(this).setView(view).create()
+        // Let the rounded panel background show instead of the default dialog frame.
+        dialog.window?.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
+        )
+        view.findViewById<Button>(R.id.btnAboutClose).setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     private fun openBatterySettings() {

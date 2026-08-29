@@ -462,9 +462,16 @@ class ReceiverService : Service() {
     private fun startForegroundInternal(text: String) {
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Remove the old badge-enabled channel from earlier builds. Channel
+            // settings are immutable once created, so a new id is the only reliable
+            // way to make setShowBadge(false) take effect for existing installs.
+            nm.deleteNotificationChannel("receiver")
             val ch = NotificationChannel(
-                CHANNEL_ID, "Audio receiver", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Keeps the audio stream running" }
+                CHANNEL_ID, "Media receiver", NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps the receiver listening"
+                setShowBadge(false)   // no launcher badge for the ongoing notification
+            }
             nm.createNotificationChannel(ch)
         }
         val notif = buildNotification(text)
@@ -489,6 +496,9 @@ class ReceiverService : Service() {
             .setContentIntent(openIntent)
             .addAction(0, "Stop", stopIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setNumber(0)                                   // no count on the badge
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
+            .setSilent(true)
             .build()
     }
 
@@ -523,7 +533,7 @@ class ReceiverService : Service() {
     }
 
     companion object {
-        const val CHANNEL_ID = "receiver"
+        const val CHANNEL_ID = "receiver2"
         const val NOTIF_ID = 1
         const val ACTION_STOP = "com.lanmedia.receiver.STOP"
         const val EXTRA_PORT = "port"

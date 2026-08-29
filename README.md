@@ -1,4 +1,4 @@
-# <img src="images/icon.png" alt="LAN Media Streaming icon" height="90" align="middle" />&nbsp;&nbsp;LAN Media Streaming
+# <img src="images/icon.png" alt="LAN Media Streaming icon" height="60" align="middle" />&nbsp;&nbsp;LAN Media Streaming
 
 Low-latency screen and audio streaming from a Windows PC to an Android display,
 entirely over your local network. No cloud, no accounts, nothing leaves the

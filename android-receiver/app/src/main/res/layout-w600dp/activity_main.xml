@@ -161,6 +161,8 @@
                 android:id="@+id/cbEncrypt"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="0dp"
+                android:paddingVertical="4dp"
                 android:text="Encrypt connection (TLS)"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -169,7 +171,9 @@
                 android:id="@+id/cbAutostart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="2dp"
+                android:minHeight="0dp"
+                android:paddingVertical="4dp"
                 android:text="Start listening when the app opens"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -178,7 +182,9 @@
                 android:id="@+id/cbBootstart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="2dp"
+                android:minHeight="0dp"
+                android:paddingVertical="4dp"
                 android:text="Start automatically after reboot"
                 android:textColor="@color/text"
                 android:textSize="18sp" />
@@ -237,6 +243,15 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:text="Open app settings"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btnAbout"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="About LAN Media Receiver"
                 android:textSize="15sp" />
         </LinearLayout>
     </LinearLayout>
