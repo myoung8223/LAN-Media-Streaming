@@ -1,4 +1,4 @@
-# LAN Media
+# LAN Media Streaming
 
 Low-latency screen and audio streaming from a Windows PC to an Android display,
 entirely over your local network. No cloud, no accounts, nothing leaves the
