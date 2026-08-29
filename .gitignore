@@ -1,0 +1,31 @@
+# ---------- Build output ----------
+# .NET (windows-sender)
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Android / Gradle (android-receiver)
+.gradle/
+build/
+local.properties
+*.apk
+*.aab
+captures/
+
+# Signing material — never commit these
+*.keystore
+*.jks
+
+# ---------- IDE / editor ----------
+.vs/
+.idea/
+*.iml
+.vscode/
+
+# ---------- OS cruft ----------
+.DS_Store
+Thumbs.db
+
+# ---------- FFmpeg binaries ----------
+# User-provided at build/run time; not part of the repo (see THIRD-PARTY-NOTICES.md).
+windows-sender/*.dll
