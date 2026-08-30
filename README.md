@@ -15,6 +15,10 @@ HDMI" over Wi-Fi or Ethernet.
   software (libx264) fallback.
 * **Audio + video, in sync.** Opus audio muxed with the video and aligned on a
   shared playout clock.
+* **Hands-free display.** Grant the panel "appear on top" once and the live view
+  pops up automatically the moment the PC starts streaming — waking the panel if
+  it was asleep — then returns to standby when the stream stops. No touching the
+  panel.
 * **FOSS.** MIT-licensed (see [LICENSE](LICENSE) and
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
@@ -59,6 +63,14 @@ Panels announce their name over UDP so the sender can find them without you
 typing an IP; an IP fallback is available for networks where broadcast is
 blocked.
 
+While the receiver is listening, it sits quietly in the background. When a
+stream begins it brings the full-screen live view to the foreground on its own
+(waking the panel if it was asleep) and drops back to the standby screen when
+the stream ends — so a wall-mounted panel needs no interaction. This uses
+Android's "appear on top" (display-over-other-apps) permission, granted once
+from a button in the receiver; without it, the app falls back to a full-screen
+notification the user taps.
+
 ### Ports (local network only)
 
 | Port  | Protocol | Purpose                          |
@@ -70,7 +82,8 @@ blocked.
 
 1. **Receiver** — build and install `android-receiver/` on your Android panel
    (Android 8.0 / API 26+), open it, and note the name it shows (e.g.
-   `Rcvr-482`). Optionally set a password.
+   `Rcvr-482`). Optionally set a password. For a hands-free wall panel, tap the
+   **appear on top** button once to allow the live view to pop up automatically.
 2. **Sender** — build `windows-sender/` (or run a published build), place the
    required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
    README), enter the receiver's name or IP and the matching password, pick your
@@ -82,9 +95,9 @@ See the per-app READMEs for full build steps, dependencies, and troubleshooting.
 
 ## Tested hardware
 
-Developed and tested on a GMKtec NucBox G5 (Intel N95 CPU), streaming to a 
+Developed and tested on a GMKtec NucBox G5 (Intel N95 CPU), streaming to a
 Samsung Galaxy Tab A6, simulating a Newline Android-based interactive panel. Any
-Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the software 
+Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the software
 fallback) and any Android 8.0+ display should work.
 
 ## Privacy
