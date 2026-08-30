@@ -1,8 +1,11 @@
 package com.lanmedia.receiver
 
 import android.app.Activity
+import android.app.NotificationManager
+import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaFormat
+import android.os.Build
 import android.os.Bundle
 import android.view.Surface
 import android.view.SurfaceHolder
@@ -25,7 +28,23 @@ class VideoActivity : Activity(), SurfaceHolder.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Wake the panel and show over the lock screen when a stream arrives.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        // Clear the "incoming stream" full-screen-intent notification, if one was posted.
+        try {
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .cancel(ReceiverService.INCOMING_NOTIF_ID)
+        } catch (_: Exception) {}
         hideSystemBars()
 
         val sv = SurfaceView(this)

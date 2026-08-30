@@ -18,6 +18,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import org.json.JSONObject
@@ -374,15 +375,57 @@ class ReceiverService : Service() {
     }
 
     private fun launchVideoActivity() {
+        val i = Intent(this, VideoActivity::class.java).addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+        )
+        // On Android 10+ an app can only launch an activity from the background if
+        // it holds "display over other apps" (SYSTEM_ALERT_WINDOW). If we have it
+        // (or we're on older Android), bring the feed straight to the foreground.
+        val canForeground =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || Settings.canDrawOverlays(this)
+        if (canForeground) {
+            try { startActivity(i); return } catch (e: Exception) {
+                android.util.Log.e("LanMedia", "direct launch failed", e)
+            }
+        }
+        // Fallback: a full-screen-intent notification is the sanctioned way to
+        // surface an activity from the background without the overlay permission.
+        postIncomingFullScreen(i)
+    }
+
+    /** Full-screen-intent notification that pops the live view (incoming-call pattern). */
+    private fun postIncomingFullScreen(activityIntent: Intent) {
         try {
-            val i = Intent(this, VideoActivity::class.java).addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                Intent.FLAG_ACTIVITY_SINGLE_TOP or
-                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val ch = NotificationChannel(
+                    INCOMING_CHANNEL_ID, "Incoming stream", NotificationManager.IMPORTANCE_HIGH
+                ).apply {
+                    description = "Brings the live view up when a stream arrives"
+                    setShowBadge(false)
+                    setSound(null, null)     // no chime
+                    enableVibration(false)
+                }
+                nm.createNotificationChannel(ch)
+            }
+            val fsi = PendingIntent.getActivity(
+                this, 2, activityIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            startActivity(i)
+            val n = NotificationCompat.Builder(this, INCOMING_CHANNEL_ID)
+                .setContentTitle("LAN Media Receiver")
+                .setContentText("Incoming stream — tap to view")
+                .setSmallIcon(R.drawable.ic_stat_audio)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setFullScreenIntent(fsi, true)
+                .setAutoCancel(true)
+                .setOngoing(false)
+                .build()
+            nm.notify(INCOMING_NOTIF_ID, n)
         } catch (e: Exception) {
-            android.util.Log.e("LanMedia", "could not launch VideoActivity", e)
+            android.util.Log.e("LanMedia", "full-screen intent failed", e)
         }
     }
 
@@ -535,6 +578,8 @@ class ReceiverService : Service() {
     companion object {
         const val CHANNEL_ID = "receiver2"
         const val NOTIF_ID = 1
+        const val INCOMING_CHANNEL_ID = "incoming"
+        const val INCOMING_NOTIF_ID = 2
         const val ACTION_STOP = "com.lanmedia.receiver.STOP"
         const val EXTRA_PORT = "port"
         const val EXTRA_PASSWORD = "password"

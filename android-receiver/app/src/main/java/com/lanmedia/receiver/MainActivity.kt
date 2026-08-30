@@ -54,7 +54,9 @@ class MainActivity : AppCompatActivity() {
         }
         b.btnMinimize.setOnClickListener { moveTaskToBack(true) }
         b.btnBattery.setOnClickListener { openBatterySettings() }
+        b.btnOverlay.setOnClickListener { openOverlaySettings() }
         b.btnAbout.setOnClickListener { showAbout() }
+        updateOverlayButton()
 
         b.cbEncrypt.setOnCheckedChangeListener { _, v ->
             prefs.edit().putBoolean("tls", v).apply()
@@ -82,6 +84,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread { b.tvStatus.text = status; refreshUi() }
         }
         b.tvStatus.text = ReceiverService.lastStatus
+        updateOverlayButton()
         refreshUi()
     }
 
@@ -172,6 +175,25 @@ class MainActivity : AppCompatActivity() {
         )
         view.findViewById<Button>(R.id.btnAboutClose).setOnClickListener { dialog.dismiss() }
         dialog.show()
+    }
+
+    /** Reflect whether "display over other apps" is granted (needed for auto pop-up). */
+    private fun updateOverlayButton() {
+        val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(this)
+        b.btnOverlay.text =
+            if (granted) "Appear on top: enabled ✓"
+            else "Open appear on top settings"
+    }
+
+    private fun openOverlaySettings() {
+        try {
+            startActivity(
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                    .setData(Uri.parse("package:$packageName"))
+            )
+        } catch (_: Exception) {
+            openBatterySettings()   // fall back to the app's settings page
+        }
     }
 
     private fun openBatterySettings() {

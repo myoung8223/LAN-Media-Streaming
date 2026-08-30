@@ -12,14 +12,31 @@
         android:gravity="center_horizontal"
         android:padding="20dp">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textColor="@color/text"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:gravity="center" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/app_name"
+                android:textColor="@color/text"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+            <Button
+                android:id="@+id/btnAbout"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:minWidth="0dp"
+                android:text="About"
+                android:textSize="13sp" />
+        </LinearLayout>
 
         <TextView
             android:layout_width="wrap_content"
@@ -181,7 +198,7 @@
             android:layout_marginTop="2dp"
             android:text="Stopped"
             android:textColor="@color/text"
-            android:textSize="24sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center" />
 
@@ -224,14 +241,23 @@
             android:text="Open app settings"
             android:textSize="15sp" />
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="Auto-show live view when a stream arrives — set appear on top."
+            android:textColor="@color/muted"
+            android:textSize="15sp"
+            android:gravity="center" />
+
         <Button
-            android:id="@+id/btnAbout"
+            android:id="@+id/btnOverlay"
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:layout_marginBottom="4dp"
-            android:text="About LAN Media Receiver"
+            android:text="Open appear on top settings"
             android:textSize="15sp" />
     </LinearLayout>
 </ScrollView>
