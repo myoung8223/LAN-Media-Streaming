@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
 
         b.tvIp.text = NetUtils.localIpv4()
         b.etPort.setText(prefs.getInt("port", Protocol.DEFAULT_PORT).toString())
+        b.etBuffer.setText(prefs.getInt("buffer", 150).toString())
         b.etPassword.setText(prefs.getString("password", ""))
 
         // Panel name: generate a distinct default once, then let the user rename.
@@ -53,6 +54,14 @@ class MainActivity : AppCompatActivity() {
             if (ReceiverService.isRunning) stopService() else requestNotifThenStart()
         }
         b.btnMinimize.setOnClickListener { moveTaskToBack(true) }
+        b.btnShowVideo.setOnClickListener {
+            // Foreground launch — works even without the "appear on top" permission.
+            startActivity(
+                Intent(this, VideoActivity::class.java).addFlags(
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                )
+            )
+        }
         b.btnBattery.setOnClickListener { openBatterySettings() }
         b.btnOverlay.setOnClickListener { openOverlaySettings() }
         b.btnAbout.setOnClickListener { showAbout() }
@@ -100,12 +109,14 @@ class MainActivity : AppCompatActivity() {
         b.btnStartStop.backgroundTintList = ColorStateList.valueOf(
             Color.parseColor(if (running) "#FF5C6C" else "#2ECC9B")
         )
+        // "Live view" is tappable only while a video stream is active; greyed otherwise.
+        b.btnShowVideo.isEnabled = VideoStream.active
         setFieldsEnabled(!running)
     }
 
     private fun setFieldsEnabled(enabled: Boolean) {
         val a = if (enabled) 1f else 0.5f
-        for (v in listOf(b.etName, b.etPort, b.etPassword)) {
+        for (v in listOf(b.etName, b.etPort, b.etPassword, b.etBuffer)) {
             v.isEnabled = enabled
             v.alpha = a
         }
@@ -139,16 +150,23 @@ class MainActivity : AppCompatActivity() {
     private fun currentPort(): Int =
         b.etPort.text.toString().trim().toIntOrNull()?.coerceIn(1024, 65535) ?: Protocol.DEFAULT_PORT
 
+    /** Playout buffer in ms, validated and clamped to the safe range (default 150). */
+    private fun currentBuffer(): Int =
+        b.etBuffer.text.toString().trim().toIntOrNull()?.coerceIn(40, 500) ?: 150
+
     private fun startService() {
         val port = currentPort()
+        val buffer = currentBuffer()
+        b.etBuffer.setText(buffer.toString())   // reflect the validated/clamped value
         val password = b.etPassword.text.toString()
         val tls = b.cbEncrypt.isChecked
         val name = b.etName.text.toString().trim()
-        prefs.edit().putInt("port", port).putString("password", password)
+        prefs.edit().putInt("port", port).putInt("buffer", buffer).putString("password", password)
             .putBoolean("tls", tls).putString("name", name).apply()
 
         val svc = Intent(this, ReceiverService::class.java).apply {
             putExtra(ReceiverService.EXTRA_PORT, port)
+            putExtra(ReceiverService.EXTRA_BUFFER, buffer)
             putExtra(ReceiverService.EXTRA_PASSWORD, password)
             putExtra(ReceiverService.EXTRA_TLS, tls)
             putExtra(ReceiverService.EXTRA_NAME, name)

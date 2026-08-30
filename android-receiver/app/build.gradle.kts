@@ -11,7 +11,7 @@ android {
         applicationId = "com.lanmedia.receiver"
         minSdk = 26
         targetSdk = 34
-        versionCode = 23
+        versionCode = 26
         versionName = "1.0"
     }
 

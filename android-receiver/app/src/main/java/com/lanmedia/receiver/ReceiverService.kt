@@ -91,6 +91,10 @@ class ReceiverService : Service() {
         password = intent?.getStringExtra(EXTRA_PASSWORD) ?: ""
         useTls = intent?.getBooleanExtra(EXTRA_TLS, true) ?: true
         panelName = intent?.getStringExtra(EXTRA_NAME) ?: panelName
+        // Playout buffer (ms), clamped to a sane range; feeds the video schedule
+        // and the audio prime so both stay in sync.
+        val buffer = intent?.getIntExtra(EXTRA_BUFFER, 150) ?: 150
+        VideoStream.delayMs = buffer.coerceIn(40, 500).toLong()
 
         startForegroundInternal("Starting…")
         acquireLocks()
@@ -320,7 +324,7 @@ class ReceiverService : Service() {
         if (hasAudio) {
             track = buildTrack(48000, 2)
             track.play()
-            primeSilence(track, VideoStream.DELAY_MS.toInt())  // delay audio to match video
+            primeSilence(track, VideoStream.delayMs.toInt())  // delay audio to match video
             opus = OpusStreamDecoder(48000, 2)
         }
         var lastAudioNanos = 0L
@@ -348,7 +352,7 @@ class ReceiverService : Service() {
                     val now = System.nanoTime()
                     // After a silence gap, re-prime so audio stays ~DELAY behind video.
                     if (lastAudioNanos != 0L && now - lastAudioNanos > 250_000_000L)
-                        primeSilence(track, VideoStream.DELAY_MS.toInt())
+                        primeSilence(track, VideoStream.delayMs.toInt())
                     lastAudioNanos = now
                     val pcm = opus.decode(payload)
                     if (pcm.isNotEmpty()) track.write(pcm, 0, pcm.size)
@@ -585,6 +589,7 @@ class ReceiverService : Service() {
         const val EXTRA_PASSWORD = "password"
         const val EXTRA_TLS = "tls"
         const val EXTRA_NAME = "name"
+        const val EXTRA_BUFFER = "buffer"
 
         private val mainHandler = Handler(Looper.getMainLooper())
 

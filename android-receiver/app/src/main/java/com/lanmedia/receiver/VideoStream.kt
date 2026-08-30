@@ -25,8 +25,10 @@ object VideoStream {
     @Volatile var baseNanos = 0L
     @Volatile var basePtsMs = 0L
 
-    /** How far behind "live" we present, to absorb jitter and match the audio prime. */
-    const val DELAY_MS = 150L
+    /** How far behind "live" we present, to absorb jitter and match the audio prime.
+     *  Runtime-settable via the receiver's "Playout buffer (ms)" field; default is
+     *  the Wi-Fi-safe value. Set before a stream begins. */
+    @Volatile var delayMs = 150L
 
     // ~2s of 30fps buffered; drop the oldest under backpressure.
     val queue = LinkedBlockingQueue<Packet>(120)

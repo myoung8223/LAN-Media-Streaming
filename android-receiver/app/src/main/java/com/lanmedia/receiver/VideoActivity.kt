@@ -151,7 +151,7 @@ class VideoActivity : Activity(), SurfaceHolder.Callback {
             val framePtsMs = info.presentationTimeUs / 1000
             val target = VideoStream.baseNanos +
                 (framePtsMs - VideoStream.basePtsMs) * 1_000_000L +
-                VideoStream.DELAY_MS * 1_000_000L
+                VideoStream.delayMs * 1_000_000L
             if (target <= System.nanoTime()) codec.releaseOutputBuffer(idx, true)
             else codec.releaseOutputBuffer(idx, target)
         } else {
