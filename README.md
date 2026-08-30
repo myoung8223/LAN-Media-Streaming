@@ -22,9 +22,13 @@ HDMI" over Wi-Fi or Ethernet.
 * **FOSS.** MIT-licensed (see [LICENSE](LICENSE) and
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
+## Screenshots
+
 <p align="center">
-  <img src="images/LAN_Media_Receiver.jpg" alt="LAN Media Receiver interface" width="51.62%" /><img src="images/LAN_Media_Sender.png" alt="LAN Media Sender interface" width="48.38%" />
+  <img src="images/LAN_Media_Receiver.jpg" alt="LAN Media Receiver interface" width="50.58%" />
+  <img src="images/LAN_Media_Sender.png" alt="LAN Media Sender interface" width="47.42%" />
 </p>
+<p align="center"><sub>LAN Media Receiver on an Android panel (left) &nbsp;•&nbsp; LAN Media Sender on Windows (right)</sub></p>
 
 ## Downloads
 
