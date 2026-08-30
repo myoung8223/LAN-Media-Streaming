@@ -27,8 +27,9 @@ HDMI" over Wi-Fi or Ethernet.
 <p align="center">
   <img src="images/LAN_Media_Receiver.jpg" alt="LAN Media Receiver interface" width="50.58%" />
   <img src="images/LAN_Media_Sender.png" alt="LAN Media Sender interface" width="47.42%" />
+  <br>
+  <sub>LAN Media Receiver on an Android panel (left) &nbsp;•&nbsp; LAN Media Sender on Windows (right)</sub>
 </p>
-<p align="center"><sub>LAN Media Receiver on an Android panel (left) &nbsp;•&nbsp; LAN Media Sender on Windows (right)</sub></p>
 
 ## Downloads
 
