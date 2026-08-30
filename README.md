@@ -15,6 +15,9 @@ HDMI" over Wi-Fi or Ethernet.
   software (libx264) fallback.
 * **Audio + video, in sync.** Opus audio muxed with the video and aligned on a
   shared playout clock.
+* **Tunable latency.** An adjustable playout buffer (40–500 ms, default 150)
+  trades smoothness for responsiveness — dial it low on wired Ethernet for
+  snappy, near-real-time video, or keep it higher on Wi-Fi to ride out jitter.
 * **Hands-free display.** Grant the panel "appear on top" once and the live view
   pops up automatically the moment the PC starts streaming — waking the panel if
   it was asleep — then returns to standby when the stream stops. No touching the
@@ -39,7 +42,7 @@ Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
 - **LAN Media Sender — Windows:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
   SHA-256: `7549cf5e28de57389bd38ef520846dc2283202a20d7989ee404d5f013f8cd5db`
 - **LAN Media Receiver — Android:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
-  SHA-256: `ca4c3c2eab9e873dfbd28c26d449d13e62b37721798054ba5f773dad01e9b3f6`
+  SHA-256: `d4843b8e9cb805badd384ef6b403e4e88e5da3897b45885e4326c0fe9736c150`
 
 **Verify your download (optional).** Confirm the file's SHA-256 matches the value above:
 
@@ -66,7 +69,9 @@ loopback and encodes it to Opus, then muxes both into a single TCP stream.
 
 The **receiver** listens for the sender, decodes H.264 with Android's MediaCodec
 straight onto a full-screen surface, decodes Opus to an AudioTrack, and keeps
-the two in sync on a shared timeline with a small buffered delay.
+the two in sync on a shared timeline with a small, adjustable buffered delay
+(the receiver's **Playout buffer** setting — lower for wired/low-latency, higher
+for Wi-Fi/smoothness).
 
 Panels announce their name over UDP so the sender can find them without you
 typing an IP; an IP fallback is available for networks where broadcast is
@@ -78,7 +83,9 @@ stream begins it brings the full-screen live view to the foreground on its own
 the stream ends — so a wall-mounted panel needs no interaction. This uses
 Android's "appear on top" (display-over-other-apps) permission, granted once
 from a button in the receiver; without it, the app falls back to a full-screen
-notification the user taps.
+notification the user taps. A **Live view** button on the receiver's main screen
+jumps (back) to the running stream at any time — handy if you switched to another
+app, or if you chose not to enable "appear on top".
 
 ### Ports (local network only)
 
