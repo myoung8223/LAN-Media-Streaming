@@ -26,7 +26,7 @@ Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
 - **LAN Media Sender — Windows:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
   SHA-256: `7549cf5e28de57389bd38ef520846dc2283202a20d7989ee404d5f013f8cd5db`
 - **LAN Media Receiver — Android:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
-  SHA-256: `9cdcd5c0fb0899e0649d1a6c462fb2e03ef151f45f6850b520443e4eae00fb03`
+  SHA-256: `ca4c3c2eab9e873dfbd28c26d449d13e62b37721798054ba5f773dad01e9b3f6`
 
 **Verify your download (optional).** Confirm the file's SHA-256 matches the value above:
 
