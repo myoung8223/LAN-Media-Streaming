@@ -13,11 +13,18 @@ HDMI" over Wi-Fi or Ethernet.
 * **Encrypted.** Optional TLS with trust-on-first-use certificate pinning.
 * **Hardware-accelerated.** H.264 via AMD AMF or Intel Quick Sync, with a
   software (libx264) fallback.
+* **Configurable video.** Set the output resolution, H.264 bitrate, and frame
+  rate (up to 60 fps) on the sender, or leave the defaults (1920×1080, 10 Mbps,
+  30 fps). Resolution acts as a bounding box: the screen is scaled to fit it,
+  aspect ratio preserved, and never upscaled beyond your display's own
+  resolution.
 * **Audio + video, in sync.** Opus audio muxed with the video and aligned on a
   shared playout clock.
-* **Tunable latency.** An adjustable playout buffer (40–500 ms, default 150)
+* **Tunable latency.** An adjustable playout buffer (20–500 ms, default 150)
   trades smoothness for responsiveness — dial it low on wired Ethernet for
   snappy, near-real-time video, or keep it higher on Wi-Fi to ride out jitter.
+  The minimum tracks the stream's frame rate (20 ms at 60 fps, 40 ms at 30 fps)
+  so playback never drops below a single frame.
 * **Hands-free display.** Grant the panel "appear on top" once and the live view
   pops up automatically the moment the PC starts streaming — waking the panel if
   it was asleep — then returns to standby when the stream stops. No touching the
@@ -65,13 +72,16 @@ Each folder has its own README with detailed build and run instructions.
 The **sender** captures the primary display with DXGI Desktop Duplication (GPU,
 ~2 ms/frame; falls back to GDI if unavailable), encodes it to H.264 with FFmpeg
 using a hardware encoder when one is present, captures system audio via WASAPI
-loopback and encodes it to Opus, then muxes both into a single TCP stream.
+loopback and encodes it to Opus, then muxes both into a single TCP stream. The
+output resolution, bitrate, and frame rate are all adjustable on the sender.
 
 The **receiver** listens for the sender, decodes H.264 with Android's MediaCodec
 straight onto a full-screen surface, decodes Opus to an AudioTrack, and keeps
 the two in sync on a shared timeline with a small, adjustable buffered delay
 (the receiver's **Playout buffer** setting — lower for wired/low-latency, higher
-for Wi-Fi/smoothness).
+for Wi-Fi/smoothness). The buffer's minimum adapts to the stream's frame rate —
+as low as 20 ms at 60 fps — so it can be set tight without ever starving the
+decoder below one frame.
 
 Panels announce their name over UDP so the sender can find them without you
 typing an IP; an IP fallback is available for networks where broadcast is
@@ -102,12 +112,23 @@ app, or if you chose not to enable "appear on top".
    **appear on top** button once to allow the live view to pop up automatically.
 2. **Sender** — build `windows-sender/` (or run a published build), place the
    required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
-   README), enter the receiver's name or IP and the matching password, pick your
-   options, and click **Start streaming**.
+   README), enter the receiver's name or IP and the matching password, set your
+   video options (resolution, bitrate, frame rate — or keep the defaults), and
+   click **Start streaming**.
 3. On the first encrypted connection the receiver's certificate is pinned;
    verify the fingerprint once and it's remembered thereafter.
 
 See the per-app READMEs for full build steps, dependencies, and troubleshooting.
+
+## Performance notes
+
+The defaults (1080p, 10 Mbps, 30 fps, 150 ms buffer) are tuned to work well on
+ordinary classroom Wi-Fi. The higher settings are best paired with wired
+Ethernet: a 60 fps stream, resolutions above 1080p, or bitrates much above
+~15 Mbps push more data than a shared access point comfortably carries, and a
+very low playout buffer leaves no room to absorb Wi-Fi jitter. A 4K/60 panel on
+gigabit Ethernet is a different story — there the panel's own H.264 decoder
+(its supported profile/level), not the network, is the limit.
 
 ## Tested hardware
 
