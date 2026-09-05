@@ -91,10 +91,13 @@ class ReceiverService : Service() {
         password = intent?.getStringExtra(EXTRA_PASSWORD) ?: ""
         useTls = intent?.getBooleanExtra(EXTRA_TLS, true) ?: true
         panelName = intent?.getStringExtra(EXTRA_NAME) ?: panelName
-        // Playout buffer (ms), clamped to a sane range; feeds the video schedule
-        // and the audio prime so both stay in sync.
+        // Playout buffer (ms): the user's requested value, clamped to a sane range.
+        // The effective buffer is derived per stream from the sender's frame rate
+        // (see handleVideoStream → applyDelayForFps) so it never drops below ~one
+        // frame — 20ms only actually takes effect at 60fps, 40ms at 30fps.
         val buffer = intent?.getIntExtra(EXTRA_BUFFER, 150) ?: 150
-        VideoStream.delayMs = buffer.coerceIn(40, 500).toLong()
+        VideoStream.requestedDelayMs = buffer.coerceIn(20, 500).toLong()
+        VideoStream.delayMs = VideoStream.requestedDelayMs   // provisional; refined once fps is known
 
         startForegroundInternal("Starting…")
         acquireLocks()
@@ -315,9 +318,14 @@ class ReceiverService : Service() {
         val w = hs.optInt("width", 1920)
         val h = hs.optInt("height", 1080)
         val hasAudio = hs.optBoolean("audio", false)
+        val fps = hs.optInt("fps", 30)
         VideoStream.begin(w, h, hasAudio)
+        // Clamp the requested playout buffer up to this stream's frame-rate floor,
+        // so a low value set for 60fps can't starve a 30fps stream.
+        VideoStream.applyDelayForFps(fps)
         launchVideoActivity()
-        updateStatus("Receiving video${if (hasAudio) " + audio" else ""}  (${sock.inetAddress.hostAddress})")
+        updateStatus("Receiving video${if (hasAudio) " + audio" else ""} · ${fps}fps · " +
+                "${VideoStream.delayMs}ms buffer  (${sock.inetAddress.hostAddress})")
 
         var track: AudioTrack? = null
         var opus: OpusStreamDecoder? = null

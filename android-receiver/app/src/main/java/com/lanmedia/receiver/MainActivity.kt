@@ -150,9 +150,11 @@ class MainActivity : AppCompatActivity() {
     private fun currentPort(): Int =
         b.etPort.text.toString().trim().toIntOrNull()?.coerceIn(1024, 65535) ?: Protocol.DEFAULT_PORT
 
-    /** Playout buffer in ms, validated and clamped to the safe range (default 150). */
+    /** Playout buffer in ms, validated and clamped to the safe range (default 150).
+     *  Floor is 20ms; the service raises it to the per-stream frame-rate floor, so
+     *  20ms only actually applies at 60fps (30fps is held to 40ms). */
     private fun currentBuffer(): Int =
-        b.etBuffer.text.toString().trim().toIntOrNull()?.coerceIn(40, 500) ?: 150
+        b.etBuffer.text.toString().trim().toIntOrNull()?.coerceIn(20, 500) ?: 150
 
     private fun startService() {
         val port = currentPort()
