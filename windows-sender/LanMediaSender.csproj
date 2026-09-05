@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>LAN Media Sender</AssemblyName>
     <RootNamespace>LanMediaSender</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <!-- Needed by the FFmpeg.AutoGen video encoder (pointer code). -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

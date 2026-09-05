@@ -24,8 +24,6 @@ internal sealed class VideoStreamer : IStreamer
     public event Action? Ended;
     public event Action<string>? Pinned;
 
-    private const long BitRate = 10_000_000;
-
     private readonly string _name;
     private readonly string _ip;
     private readonly int _port;
@@ -33,7 +31,9 @@ internal sealed class VideoStreamer : IStreamer
     private readonly bool _useTls;
     private string _pinnedFp;
     private readonly int _fps;
+    private readonly int _maxWidth;
     private readonly int _maxHeight;
+    private readonly long _videoBitRate;   // H.264 target, bits/sec
     private readonly bool _showCursor;
     private readonly bool _includeAudio;
     private readonly int _audioBitrate;
@@ -50,11 +50,13 @@ internal sealed class VideoStreamer : IStreamer
     private string _captureNote = "";    // reason shown in status if GPU capture fell back
 
     public VideoStreamer(string name, string ip, int port, string password, bool useTls, string pinnedFp,
-                         int maxHeight, int fps, bool showCursor, bool includeAudio, int audioBitrate)
+                         int maxWidth, int maxHeight, int fps, long videoBitRate,
+                         bool showCursor, bool includeAudio, int audioBitrate)
     {
         _name = name ?? ""; _ip = ip; _port = port; _password = password;
         _useTls = useTls; _pinnedFp = pinnedFp ?? "";
-        _maxHeight = maxHeight; _fps = fps; _showCursor = showCursor;
+        _maxWidth = maxWidth; _maxHeight = maxHeight; _fps = fps; _videoBitRate = videoBitRate;
+        _showCursor = showCursor;
         _includeAudio = includeAudio; _audioBitrate = audioBitrate;
     }
 
@@ -67,7 +69,7 @@ internal sealed class VideoStreamer : IStreamer
         int w = _capture.Width, h = _capture.Height;
         try
         {
-            _enc = new ScreenH264Encoder(w, h, _fps, BitRate, _maxHeight);
+            _enc = new ScreenH264Encoder(w, h, _fps, _videoBitRate, _maxWidth, _maxHeight);
         }
         catch
         {
@@ -81,7 +83,7 @@ internal sealed class VideoStreamer : IStreamer
         _netThread = new Thread(NetworkLoop) { IsBackground = true, Name = "lan-video-net" };
         _netThread.Start();
         string scaled = (_enc.Width != w || _enc.Height != h) ? $" → {_enc.Width}x{_enc.Height}" : "";
-        Status?.Invoke($"Video: {w}x{h}{scaled} @ {_fps}fps · {_capture.Name} · {_enc.EncoderName}");
+        Status?.Invoke($"Video: {w}x{h}{scaled} @ {_fps}fps · {_videoBitRate / 1_000_000.0:0.#} Mbps · {_capture.Name} · {_enc.EncoderName}");
     }
 
     /// <summary>Prefer GPU capture (DXGI); fall back to GDI if it isn't available.</summary>

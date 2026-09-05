@@ -13,19 +13,18 @@ internal class MainForm : Form
     private readonly CheckBox _encrypt = new() { Text = "Encrypt connection", AutoSize = true };
     private readonly CheckBox _compress = new() { Text = "Compress audio", AutoSize = true };
     private readonly CheckBox _video = new() { Text = "Stream video", AutoSize = true };
-    private readonly ComboBox _vquality = new() { Width = 200, DropDownStyle = ComboBoxStyle.DropDownList };
+    // Free-form video knobs (replacing the old quality dropdown). Small centered
+    // boxes; parsed, clamped, and reflected back at stream start.
+    private readonly TextBox _vWidth   = new() { Width = 50, TextAlign = HorizontalAlignment.Center };
+    private readonly TextBox _vHeight  = new() { Width = 50, TextAlign = HorizontalAlignment.Center };
+    private readonly TextBox _vBitrate = new() { Width = 58, TextAlign = HorizontalAlignment.Center };
+    private readonly TextBox _vFps     = new() { Width = 50, TextAlign = HorizontalAlignment.Center };
+    private readonly Label _vX = new()
+        { Text = "×", AutoSize = false, Width = 16, Height = 22, TextAlign = ContentAlignment.MiddleCenter };
+    private readonly ToolTip _tips = new() { AutoPopDelay = 15000, InitialDelay = 400, ReshowDelay = 100 };
     private readonly CheckBox _cursor = new() { Text = "Show mouse cursor", AutoSize = true };
     private readonly CheckBox _incAudio = new() { Text = "Include audio", AutoSize = true };
 
-    // Video quality presets: (label, max output height, fps).
-    private static readonly (string label, int h, int fps)[] VQ =
-    {
-        ("1080p · 30 fps", 1080, 30),
-        ("900p · 30 fps",  900,  30),
-        ("720p · 30 fps",  720,  30),
-        ("720p · 24 fps",  720,  24),
-        ("540p · 30 fps",  540,  30),
-    };
     private readonly ComboBox _bitrate = new() { Width = 220, DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly Button _startStop = new() { Text = "Start streaming", Width = 220, Height = 38 };
     private readonly LevelBar _level = new() { Width = 320, Height = 14 };
@@ -49,7 +48,7 @@ internal class MainForm : Form
 
     // App identity (shown in the title bar and the About box).
     private const string AppTitle = "LAN Media Sender";
-    private const string AppVersion = "1.0";
+    private const string AppVersion = "1.1.0";
     // Placeholder — update once the public repo exists.
     private const string GitHubUrl = "https://github.com/myoung8223/LAN-Media-Streaming";
 
@@ -94,7 +93,7 @@ internal class MainForm : Form
 
         // Field sizes for the two-column layout.
         _name.Width = 250; _ip.Width = 250; _password.Width = 250; _port.Width = 120;
-        _source.Width = 250; _bitrate.Width = 250; _vquality.Width = 250;
+        _source.Width = 250; _bitrate.Width = 250;
         _startStop.Width = 260; _startStop.Height = 44;
         _clearPin.Width = 260; _clearPin.Height = 30;
         _level.Width = 260; _level.Height = 5;
@@ -133,9 +132,37 @@ internal class MainForm : Form
         _video.Top = 14; Controls.Add(_video);            // "Stream video" mode toggle (aligns with the left column's first label)
         _video.Left = rightX + (colW - _video.PreferredSize.Width) / 2;
 
-        Controls.Add(CL("Video quality", rightX, 44));
-        foreach (var v in VQ) _vquality.Items.Add(v.label);
-        Place(_vquality, rightX, 62);
+        // Three video knobs in one row: Resolution (W×H), Bitrate (Mbps), FPS.
+        // Absolute layout, centered as a group within the right column.
+        // Sub-caption at an explicit x/width (CL centers over the whole column).
+        Label SL(string t, int lx, int yy, int lw) => new()
+        {
+            Text = t, Left = lx, Top = yy, Width = lw, Height = 16, AutoSize = false,
+            TextAlign = ContentAlignment.MiddleCenter, ForeColor = MutedC, UseMnemonic = false,
+        };
+        const int vLabelY = 44, vBoxY = 63;
+        Controls.Add(SL("Resolution (WxH)", 368, vLabelY, 120));
+        Controls.Add(SL("Bitrate (Mbps)",   485, vLabelY, 96));
+        Controls.Add(SL("FPS",              580, vLabelY, 50));
+
+        _vWidth.Top = vBoxY;   _vWidth.Left = 370;   Controls.Add(_vWidth);
+        _vX.Top = vBoxY;       _vX.Left = 420;       Controls.Add(_vX);
+        _vHeight.Top = vBoxY;  _vHeight.Left = 436;  Controls.Add(_vHeight);
+        _vBitrate.Top = vBoxY; _vBitrate.Left = 504; Controls.Add(_vBitrate);
+        _vFps.Top = vBoxY;     _vFps.Left = 580;     Controls.Add(_vFps);
+
+        const string resTip =
+            "Maximum output size. The screen is scaled to fit inside Width×Height, "
+            + "keeping its aspect ratio, and is never upscaled beyond your display's own "
+            + "resolution. Default 1920×1080.";
+        _tips.SetToolTip(_vWidth, resTip);
+        _tips.SetToolTip(_vHeight, resTip);
+        _tips.SetToolTip(_vBitrate,
+            "H.264 target bitrate in megabits/sec (1–50). ~10 suits 1080p30; higher "
+            + "resolutions and frame rates want more. Above ~15 Mbps, prefer wired Ethernet.");
+        _tips.SetToolTip(_vFps,
+            "Frames per second (10–60). 30 is the safe default. 60 needs a panel that "
+            + "supports 1080p60 (H.264 Level 4.2) and, at higher settings, wired Ethernet.");
 
         PlacePair(_cursor, _incAudio, rightX, 96);
 
@@ -185,7 +212,10 @@ internal class MainForm : Form
         _encrypt.Checked = _settings.UseTls;
         _compress.Checked = _settings.UseOpus;
         _video.Checked = _settings.UseVideo;
-        _vquality.SelectedIndex = IndexForVideo(_settings.VideoMaxHeight, _settings.VideoFps);
+        _vWidth.Text = _settings.VideoMaxWidth.ToString();
+        _vHeight.Text = _settings.VideoMaxHeight.ToString();
+        _vBitrate.Text = _settings.VideoBitrateMbps.ToString();
+        _vFps.Text = _settings.VideoFps.ToString();
         _cursor.Checked = _settings.ShowCursor;
         _incAudio.Checked = _settings.IncludeAudioWithVideo;
         ApplyVideoOptionState(_video.Checked);
@@ -214,11 +244,14 @@ internal class MainForm : Form
         };
         _cursor.CheckedChanged += (_, __) => { _settings.ShowCursor = _cursor.Checked; _settings.Save(); };
         _incAudio.CheckedChanged += (_, __) => { _settings.IncludeAudioWithVideo = _incAudio.Checked; _settings.Save(); };
-        _vquality.SelectedIndexChanged += (_, __) =>
-        {
-            int idx = _vquality.SelectedIndex;
-            if (idx >= 0) { _settings.VideoMaxHeight = VQ[idx].h; _settings.VideoFps = VQ[idx].fps; _settings.Save(); }
-        };
+        // Persist the (clamped) video knobs when focus leaves a field. The typed
+        // text is left alone while editing; the final values are reflected back at
+        // stream start (see Toggle → ReflectVideoFields).
+        EventHandler persistVideo = (_, __) => PersistVideoFields();
+        _vWidth.Leave += persistVideo;
+        _vHeight.Leave += persistVideo;
+        _vBitrate.Leave += persistVideo;
+        _vFps.Leave += persistVideo;
         _clearPin.Click += (_, __) =>
         {
             _settings.PinnedFingerprint = "";
@@ -244,11 +277,12 @@ internal class MainForm : Form
 
     private void ApplyTheme()
     {
-        foreach (var tb in new[] { _name, _ip, _port, _password })
+        foreach (var tb in new[] { _name, _ip, _port, _password, _vWidth, _vHeight, _vBitrate, _vFps })
         {
             tb.BackColor = PanelC; tb.ForeColor = TextC; tb.BorderStyle = BorderStyle.FixedSingle;
         }
-        foreach (var combo in new[] { _source, _bitrate, _vquality })
+        _vX.ForeColor = MutedC;
+        foreach (var combo in new[] { _source, _bitrate })
         {
             combo.BackColor = PanelC; combo.ForeColor = TextC; combo.FlatStyle = FlatStyle.Flat;
         }
@@ -293,7 +327,12 @@ internal class MainForm : Form
     /// </summary>
     private void ApplyVideoOptionState(bool on)
     {
-        _vquality.Enabled = on;
+        foreach (var tb in new[] { _vWidth, _vHeight, _vBitrate, _vFps })
+        {
+            tb.Enabled = on;
+            tb.ForeColor = on ? TextC : DisabledC;
+        }
+        _vX.ForeColor = on ? MutedC : DisabledC;
         _cursor.AutoCheck = on;
         _incAudio.AutoCheck = on;
         _cursor.ForeColor = on ? TextC : DisabledC;
@@ -325,11 +364,37 @@ internal class MainForm : Form
         _ => 128000,
     };
 
-    private static int IndexForVideo(int h, int fps)
+    // ---- Video field validation: parse, clamp to a safe range, fall back to a
+    //      sensible default on blank/garbage. Width/height are forced even (H.264). ----
+    private static int ClampField(string text, int min, int max, int fallback, bool even = false)
     {
-        for (int i = 0; i < VQ.Length; i++)
-            if (VQ[i].h == h && VQ[i].fps == fps) return i;
-        return 0;
+        if (!int.TryParse(text.Trim(), out int v)) v = fallback;
+        v = Math.Clamp(v, min, max);
+        if (even) v &= ~1;
+        return v;
+    }
+    private int CurrentWidth()       => ClampField(_vWidth.Text, 320, 3840, 1920, even: true);
+    private int CurrentHeight()      => ClampField(_vHeight.Text, 240, 2160, 1080, even: true);
+    private int CurrentBitrateMbps() => ClampField(_vBitrate.Text, 1, 50, 10);
+    private int CurrentFps()         => ClampField(_vFps.Text, 10, 60, 30);
+
+    /// <summary>Write validated/clamped values back into the boxes so the user sees exactly what will stream.</summary>
+    private void ReflectVideoFields()
+    {
+        _vWidth.Text = CurrentWidth().ToString();
+        _vHeight.Text = CurrentHeight().ToString();
+        _vBitrate.Text = CurrentBitrateMbps().ToString();
+        _vFps.Text = CurrentFps().ToString();
+    }
+
+    /// <summary>Persist the clamped video knobs (called when a field loses focus).</summary>
+    private void PersistVideoFields()
+    {
+        _settings.VideoMaxWidth = CurrentWidth();
+        _settings.VideoMaxHeight = CurrentHeight();
+        _settings.VideoFps = CurrentFps();
+        _settings.VideoBitrateMbps = CurrentBitrateMbps();
+        _settings.Save();
     }
 
     private static int IndexForBitrate(int b) => b switch
@@ -367,12 +432,13 @@ internal class MainForm : Form
         int port = int.TryParse(_port.Text.Trim(), out int p) ? p : Protocol.DefaultPort;
         bool system = _source.SelectedIndex == 0;
 
+        if (_video.Checked) ReflectVideoFields();   // show the exact clamped values that will stream
         SaveSettings();
 
-        int vqi = _vquality.SelectedIndex >= 0 ? _vquality.SelectedIndex : 0;
         _streamer = _video.Checked
             ? new VideoStreamer(name, ip, port, _password.Text, _encrypt.Checked, _settings.PinnedFingerprint,
-                VQ[vqi].h, VQ[vqi].fps, _cursor.Checked, _incAudio.Checked, BitrateForIndex(_bitrate.SelectedIndex))
+                CurrentWidth(), CurrentHeight(), CurrentFps(), (long)CurrentBitrateMbps() * 1_000_000,
+                _cursor.Checked, _incAudio.Checked, BitrateForIndex(_bitrate.SelectedIndex))
             : new AudioStreamer(name, ip, port, _password.Text, system, _encrypt.Checked,
                 _settings.PinnedFingerprint, _compress.Checked, BitrateForIndex(_bitrate.SelectedIndex));
         _streamer.Status += OnStatus;
@@ -522,9 +588,10 @@ internal class MainForm : Form
         _settings.UseTls = _encrypt.Checked;
         _settings.UseOpus = _compress.Checked;
         _settings.UseVideo = _video.Checked;
-        int vqi = _vquality.SelectedIndex >= 0 ? _vquality.SelectedIndex : 0;
-        _settings.VideoMaxHeight = VQ[vqi].h;
-        _settings.VideoFps = VQ[vqi].fps;
+        _settings.VideoMaxWidth = CurrentWidth();
+        _settings.VideoMaxHeight = CurrentHeight();
+        _settings.VideoFps = CurrentFps();
+        _settings.VideoBitrateMbps = CurrentBitrateMbps();
         _settings.ShowCursor = _cursor.Checked;
         _settings.IncludeAudioWithVideo = _incAudio.Checked;
         _settings.OpusBitrate = BitrateForIndex(_bitrate.SelectedIndex);

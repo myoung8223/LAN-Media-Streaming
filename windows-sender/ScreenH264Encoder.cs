@@ -11,23 +11,26 @@ namespace LanMediaSender;
 /// </summary>
 internal sealed unsafe class ScreenH264Encoder : IDisposable
 {
-    private const int MaxW = 1920;
-
     private readonly int _srcW, _srcH, _outW, _outH;
     private AVCodecContext* _c;
     private AVFrame* _frame;
     private AVPacket* _pkt;
     private SwsContext* _sws;
+    private AVBSFContext* _bsf;   // dump_extra: forces SPS/PPS in-band on every keyframe
     private static bool _ffmpegInit;
 
     public int Width => _outW;
     public int Height => _outH;
     public string EncoderName { get; private set; } = "?";
 
-    public ScreenH264Encoder(int srcWidth, int srcHeight, int fps, long bitRate, int maxHeight)
+    public ScreenH264Encoder(int srcWidth, int srcHeight, int fps, long bitRate, int maxWidth, int maxHeight)
     {
         _srcW = srcWidth; _srcH = srcHeight;
-        double scale = Math.Min(1.0, Math.Min((double)MaxW / srcWidth, (double)maxHeight / srcHeight));
+        // Fit the source inside the maxWidth x maxHeight box, preserving aspect
+        // ratio, and never upscale (scale is capped at 1.0). So a user-supplied
+        // resolution acts as a bounding box, not a forced stretch — a mismatched
+        // aspect ratio letterboxes by shrinking to fit rather than distorting.
+        double scale = Math.Min(1.0, Math.Min((double)maxWidth / srcWidth, (double)maxHeight / srcHeight));
         _outW = ((int)Math.Round(srcWidth * scale)) & ~1;
         _outH = ((int)Math.Round(srcHeight * scale)) & ~1;
 
@@ -39,6 +42,7 @@ internal sealed unsafe class ScreenH264Encoder : IDisposable
         }
 
         AVPixelFormat fmt = OpenBestEncoder(fps, bitRate);
+        InitDumpExtraBsf();
 
         _frame = ffmpeg.av_frame_alloc();
         _frame->format = (int)fmt;
@@ -70,6 +74,13 @@ internal sealed unsafe class ScreenH264Encoder : IDisposable
             c->time_base = new AVRational { num = 1, den = fps };
             c->framerate = new AVRational { num = fps, den = 1 };
             c->pix_fmt = fmt; c->gop_size = fps; c->max_b_frames = 0; c->bit_rate = bitRate;
+            // Ask the encoder to emit SPS/PPS as out-of-band extradata. We then use
+            // the dump_extra bitstream filter to re-insert that extradata in-band on
+            // every keyframe (see InitDumpExtraBsf). This is uniform across encoders
+            // and works around h264_amf, which otherwise never emits SPS/PPS in-band
+            // and leaves the Android decoder with no way to configure itself (black
+            // screen; audio, decoded separately, is unaffected).
+            c->flags |= ffmpeg.AV_CODEC_FLAG_GLOBAL_HEADER;
             switch (name)
             {
                 case "h264_amf":
@@ -92,6 +103,32 @@ internal sealed unsafe class ScreenH264Encoder : IDisposable
         throw new ApplicationException("No usable H.264 encoder (amf/qsv/libx264) could be opened.");
     }
 
+    /// <summary>
+    /// Set up the "dump_extra" bitstream filter on the encoder's output. It copies
+    /// the codec extradata (SPS/PPS) to the front of each keyframe packet — except
+    /// when a packet already begins with that extradata, so it is a no-op for
+    /// encoders that already include headers in-band. This guarantees the Android
+    /// MediaCodec receiver always sees SPS (NAL type 7) + PPS (type 8) with every
+    /// keyframe and can configure its decoder, fixing the AMD (h264_amf) black
+    /// screen without affecting Intel QSV or software libx264 output.
+    /// </summary>
+    private void InitDumpExtraBsf()
+    {
+        AVBitStreamFilter* filter = ffmpeg.av_bsf_get_by_name("dump_extra");
+        if (filter == null) throw new ApplicationException("dump_extra bitstream filter not found.");
+        fixed (AVBSFContext** pbsf = &_bsf)
+        {
+            if (ffmpeg.av_bsf_alloc(filter, pbsf) < 0)
+                throw new ApplicationException("av_bsf_alloc(dump_extra) failed.");
+        }
+        if (ffmpeg.avcodec_parameters_from_context(_bsf->par_in, _c) < 0)
+            throw new ApplicationException("avcodec_parameters_from_context failed.");
+        _bsf->time_base_in = _c->time_base;
+        // Default freq is "keyframe" (k) — insert on keyframes only, which is what we want.
+        if (ffmpeg.av_bsf_init(_bsf) < 0)
+            throw new ApplicationException("av_bsf_init(dump_extra) failed.");
+    }
+
     /// <summary>Encode one BGRA frame (pointer valid for the duration of the call).</summary>
     public void Encode(IntPtr bgra, int stride, long pts, Action<byte[]> sink)
     {
@@ -110,16 +147,28 @@ internal sealed unsafe class ScreenH264Encoder : IDisposable
             ret = ffmpeg.avcodec_receive_packet(_c, _pkt);
             if (ret == ffmpeg.AVERROR(ffmpeg.EAGAIN) || ret == ffmpeg.AVERROR_EOF) break;
             if (ret < 0) throw new ApplicationException("receive_packet failed: " + FfErr.Str(ret));
-            var buf = new byte[_pkt->size];
-            System.Runtime.InteropServices.Marshal.Copy((IntPtr)_pkt->data, buf, 0, _pkt->size);
+
+            // Run the packet through dump_extra so keyframes carry SPS/PPS in-band.
+            int bret = ffmpeg.av_bsf_send_packet(_bsf, _pkt);
             ffmpeg.av_packet_unref(_pkt);
-            sink(buf);
+            if (bret < 0) throw new ApplicationException("bsf_send_packet failed: " + FfErr.Str(bret));
+            while (true)
+            {
+                bret = ffmpeg.av_bsf_receive_packet(_bsf, _pkt);
+                if (bret == ffmpeg.AVERROR(ffmpeg.EAGAIN) || bret == ffmpeg.AVERROR_EOF) break;
+                if (bret < 0) throw new ApplicationException("bsf_receive_packet failed: " + FfErr.Str(bret));
+                var buf = new byte[_pkt->size];
+                System.Runtime.InteropServices.Marshal.Copy((IntPtr)_pkt->data, buf, 0, _pkt->size);
+                ffmpeg.av_packet_unref(_pkt);
+                sink(buf);
+            }
         }
     }
 
     public void Dispose()
     {
         if (_sws != null) ffmpeg.sws_freeContext(_sws);
+        fixed (AVBSFContext** bp = &_bsf) ffmpeg.av_bsf_free(bp);
         fixed (AVPacket** p = &_pkt) ffmpeg.av_packet_free(p);
         fixed (AVFrame** f = &_frame) ffmpeg.av_frame_free(f);
         fixed (AVCodecContext** c = &_c) ffmpeg.avcodec_free_context(c);
