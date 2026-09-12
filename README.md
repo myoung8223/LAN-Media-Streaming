@@ -1,18 +1,22 @@
 # <img src="images/icon.png" alt="LAN Media Streaming icon" height="60" align="middle" />&nbsp;&nbsp;LAN Media Streaming
 
-Low-latency screen and audio streaming from a Windows PC to an Android display,
-entirely over your local network. No cloud, no accounts, nothing leaves the
-building.
+Low-latency screen and audio streaming from a Windows PC to an Android panel or
+Linux PC, entirely over your local network. No cloud, no accounts, nothing
+leaves the building.
 
 Built for classrooms — mirror a teacher's Windows PC onto a wall-mounted
-Android panel — but useful anywhere you want a private, self-hosted "wireless
-HDMI" over Wi-Fi or Ethernet.
+Android panel or a repurposed PC — but useful anywhere you want a private,
+self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
 
 * **LAN-only.** Discovery, control, and media all stay on your subnet. No
   internet, no telemetry.
 * **Encrypted.** Optional TLS with trust-on-first-use certificate pinning.
-* **Hardware-accelerated.** H.264 via AMD AMF or Intel Quick Sync, with a
-  software (libx264) fallback.
+* **Hardware-accelerated.** H.264 via AMD AMF or Intel Quick Sync on the sender,
+  with a software (libx264) fallback.
+* **Android or Linux receivers.** Display on a wall-mounted Android panel or a
+  Linux PC. The Linux receiver is a small C service (SDL2 + FFmpeg + OpenSSL)
+  with VAAPI GPU decode and automatic software fallback — good for turning an
+  old laptop or mini-PC into a panel.
 * **Configurable video.** Set the output resolution, H.264 bitrate, and frame
   rate (up to 60 fps) on the sender, or leave the defaults (1920×1080, 10 Mbps,
   30 fps). Resolution acts as a bounding box: the screen is scaled to fit it,
@@ -25,10 +29,9 @@ HDMI" over Wi-Fi or Ethernet.
   snappy, near-real-time video, or keep it higher on Wi-Fi to ride out jitter.
   The minimum tracks the stream's frame rate (20 ms at 60 fps, 40 ms at 30 fps)
   so playback never drops below a single frame.
-* **Hands-free display.** Grant the panel "appear on top" once and the live view
-  pops up automatically the moment the PC starts streaming — waking the panel if
-  it was asleep — then returns to standby when the stream stops. No touching the
-  panel.
+* **Hands-free display.** The panel brings the live view up on its own the moment
+  the PC starts streaming — waking the panel if it was asleep — then returns to
+  standby when the stream stops. No touching the panel.
 * **FOSS.** MIT-licensed (see [LICENSE](LICENSE) and
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
 
@@ -51,6 +54,9 @@ Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
 - **LAN Media Receiver — Android:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
   SHA-256: `157d6df99f1eb4ce3ff279e7c4225f037e5d216be6422aa9e3d2d84d41f414e6`
 
+The **Linux receiver** has no prebuilt download — build it from source in
+`linux-receiver/` (a couple of `apt` packages plus `make`; see its README).
+
 **Verify your download (optional).** Confirm the file's SHA-256 matches the value above:
 
 - Windows (PowerShell): `Get-FileHash "LAN_Media_Sender_Windows_Binary.zip" -Algorithm SHA256`
@@ -63,6 +69,7 @@ Prefer to build it yourself? See the per-app folders below.
 ```
 windows-sender/    LAN Media Sender — Windows (.NET 8 / WinForms) capture-and-stream app
 android-receiver/  LAN Media Receiver — Android app that displays the stream
+linux-receiver/    LAN Media Receiver — Linux (C / SDL2 / FFmpeg) service + GTK settings app
 ```
 
 Each folder has its own README with detailed build and run instructions.
@@ -75,27 +82,37 @@ using a hardware encoder when one is present, captures system audio via WASAPI
 loopback and encodes it to Opus, then muxes both into a single TCP stream. The
 output resolution, bitrate, and frame rate are all adjustable on the sender.
 
-The **receiver** listens for the sender, decodes H.264 with Android's MediaCodec
-straight onto a full-screen surface, decodes Opus to an AudioTrack, and keeps
-the two in sync on a shared timeline with a small, adjustable buffered delay
-(the receiver's **Playout buffer** setting — lower for wired/low-latency, higher
-for Wi-Fi/smoothness). The buffer's minimum adapts to the stream's frame rate —
-as low as 20 ms at 60 fps — so it can be set tight without ever starving the
-decoder below one frame.
+The **Android receiver** listens for the sender, decodes H.264 with Android's
+MediaCodec straight onto a full-screen surface, decodes Opus to an AudioTrack,
+and keeps the two in sync on a shared timeline with a small, adjustable buffered
+delay (the receiver's **Playout buffer** setting — lower for wired/low-latency,
+higher for Wi-Fi/smoothness). The buffer's minimum adapts to the stream's frame
+rate — as low as 20 ms at 60 fps — so it can be set tight without ever starving
+the decoder below one frame.
+
+The **Linux receiver** does the same on a PC: a lean C service that decodes
+H.264 with FFmpeg — on the GPU via VAAPI when the hardware supports it, in
+software otherwise (detected automatically, with fallback) — and displays
+fullscreen with SDL2. It speaks the identical protocol (name discovery, TLS
+pinning, the same fps-aware playout buffer), pops the stream up on connect, and
+can be launched at login through the desktop's autostart for a hands-free panel.
+A small GTK settings app sets the name, port, password, buffer, and decode mode.
+It's a natural way to reuse an old laptop or mini-PC as a display.
 
 Panels announce their name over UDP so the sender can find them without you
 typing an IP; an IP fallback is available for networks where broadcast is
 blocked.
 
-While the receiver is listening, it sits quietly in the background. When a
-stream begins it brings the full-screen live view to the foreground on its own
-(waking the panel if it was asleep) and drops back to the standby screen when
-the stream ends — so a wall-mounted panel needs no interaction. This uses
-Android's "appear on top" (display-over-other-apps) permission, granted once
-from a button in the receiver; without it, the app falls back to a full-screen
-notification the user taps. A **Live view** button on the receiver's main screen
-jumps (back) to the running stream at any time — handy if you switched to another
-app, or if you chose not to enable "appear on top".
+While a receiver is listening, it sits quietly in the background and brings the
+full-screen live view forward on its own when a stream begins (waking the display
+if it was asleep), then drops back to standby when the stream ends — so a
+wall-mounted panel needs no interaction. On Android this uses the "appear on top"
+(display-over-other-apps) permission, granted once from a button in the receiver;
+without it, the app falls back to a full-screen notification the user taps, and a
+**Live view** button on the main screen jumps back to the running stream at any
+time. On Linux the same hands-free behavior comes from running the receiver in
+your desktop session (via autostart), where it opens the fullscreen window on
+connect.
 
 ### Ports (local network only)
 
@@ -106,10 +123,15 @@ app, or if you chose not to enable "appear on top".
 
 ## Quick start
 
-1. **Receiver** — build and install `android-receiver/` on your Android panel
-   (Android 8.0 / API 26+), open it, and note the name it shows (e.g.
-   `Rcvr-482`). Optionally set a password. For a hands-free wall panel, tap the
-   **appear on top** button once to allow the live view to pop up automatically.
+1. **Receiver** — pick one:
+   - *Android:* build and install `android-receiver/` on your panel (Android 8.0
+     / API 26+), open it, and note the name it shows (e.g. `Rcvr-482`). Optionally
+     set a password. For a hands-free wall panel, tap the **appear on top** button
+     once so the live view can pop up automatically.
+   - *Linux:* build `linux-receiver/` on any x86-64 Linux PC (one `apt` line plus
+     `make`; see its README), run the settings app to set the name/password, and
+     optionally add it to your desktop's autostart. It appears to the sender
+     exactly like any other receiver.
 2. **Sender** — build `windows-sender/` (or run a published build), place the
    required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
    README), enter the receiver's name or IP and the matching password, set your
@@ -130,12 +152,23 @@ very low playout buffer leaves no room to absorb Wi-Fi jitter. A 4K/60 panel on
 gigabit Ethernet is a different story — there the panel's own H.264 decoder
 (its supported profile/level), not the network, is the limit.
 
+On the Linux receiver, hardware (VAAPI) decode matters most on weak CPUs — an
+old Chromebook or Atom-class machine may need it for smooth 1080p — while a
+stronger laptop can decode 1080p30 in software comfortably. Either way the
+receiver detects what's available and falls back automatically, so the same
+build runs across a mix of old hardware.
+
 ## Tested hardware
 
 Developed and tested on a GMKtec NucBox G5 (Intel N95 CPU), streaming to a
 Samsung Galaxy Tab A6, simulating a Newline Android-based interactive panel. Any
 Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the software
 fallback) and any Android 8.0+ display should work.
+
+The **Linux receiver** targets x86-64 Linux and was developed on Lubuntu 24.04.
+It runs on modest, repurposed hardware — old laptops and mini-PCs — using VAAPI
+hardware H.264 decode where the GPU/driver expose it, and software decode
+otherwise.
 
 ## Privacy
 
@@ -148,8 +181,9 @@ optionally encrypted.
 ## License
 
 MIT — see [LICENSE](LICENSE). Bundled and referenced third-party components
-(FFmpeg, NAudio, Concentus, Vortice, AndroidX, and others) remain under their
-own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+(FFmpeg, NAudio, Concentus, Vortice, AndroidX, SDL2, libopus, OpenSSL, and
+others) remain under their own licenses; see
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## Credits
 
