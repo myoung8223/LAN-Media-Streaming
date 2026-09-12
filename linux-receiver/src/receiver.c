@@ -746,14 +746,22 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--fingerprint") == 0)
             return print_fingerprint_and_exit();
+        if (strcmp(argv[i], "--version") == 0) {
+            printf("LAN Media Receiver v%s\n", LM_VERSION);
+            return 0;
+        }
         if (strcmp(argv[i], "--help") == 0) {
-            printf("Usage: lanmedia-receiver [--fingerprint]\n"
+            printf("LAN Media Receiver v%s\n"
+                   "Usage: lanmedia-receiver [--fingerprint | --version | --help]\n"
                    "  Reads config from %s\n"
-                   "  --fingerprint  print the TLS certificate fingerprint and exit\n",
-                   config_file_path());
+                   "  --fingerprint  print the TLS certificate fingerprint and exit\n"
+                   "  --version      print the version and exit\n",
+                   LM_VERSION, config_file_path());
             return 0;
         }
     }
+
+    log_msg("LAN Media Receiver v%s", LM_VERSION);
 
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);

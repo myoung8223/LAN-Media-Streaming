@@ -93,6 +93,29 @@ static void on_close(GtkButton *b, gpointer data)
     gtk_main_quit();
 }
 
+/* Standard About dialog — mirrors the Android app's About box. */
+static void on_about(GtkButton *b, gpointer data)
+{
+    (void)data;
+    GtkWidget *top = gtk_widget_get_toplevel(GTK_WIDGET(b));
+    gtk_show_about_dialog(GTK_WINDOW(top),
+        "program-name", "LAN Media Receiver",
+        "version", LM_VERSION,
+        "comments",
+            "LAN-based screen & audio streaming — Linux receiver.\n\n"
+            "Design guidance and testing by Mike Young.\n"
+            "Programmed by Anthropic Claude (Opus 4.8).",
+        "license",
+            "Released under the MIT License.\n\n"
+            "This receiver also uses SDL2, FFmpeg, libopus, OpenSSL, and GTK — "
+            "each provided by your system under its own license. See the "
+            "repository's THIRD-PARTY-NOTICES.md for full details.",
+        "wrap-license", TRUE,
+        "website", LM_REPO_URL,
+        "website-label", "github.com/myoung8223/LAN-Media-Streaming",
+        NULL);
+}
+
 /* Convenience: a right-aligned caption in the grid. */
 static GtkWidget *caption(const char *text)
 {
@@ -185,13 +208,15 @@ int main(int argc, char **argv)
 
     /* Buttons. */
     GtkWidget *bbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_widget_set_halign(bbox, GTK_ALIGN_END);
+    GtkWidget *b_about = gtk_button_new_with_label("About");
     GtkWidget *b_save = gtk_button_new_with_label("Save");
     GtkWidget *b_apply = gtk_button_new_with_label("Save & restart service");
     GtkWidget *b_close = gtk_button_new_with_label("Close");
-    gtk_box_pack_start(GTK_BOX(bbox), b_save, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(bbox), b_apply, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(bbox), b_close, FALSE, FALSE, 0);
+    /* About on the left; Save/Close grouped on the right. */
+    gtk_box_pack_start(GTK_BOX(bbox), b_about, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(bbox), b_close, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(bbox), b_apply, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(bbox), b_save, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(vbox), bbox, FALSE, FALSE, 0);
 
     ui.status = gtk_label_new("");
@@ -201,6 +226,7 @@ int main(int argc, char **argv)
     g_signal_connect(b_save, "clicked", G_CALLBACK(on_save), &ui);
     g_signal_connect(b_apply, "clicked", G_CALLBACK(on_save_restart), &ui);
     g_signal_connect(b_close, "clicked", G_CALLBACK(on_close), &ui);
+    g_signal_connect(b_about, "clicked", G_CALLBACK(on_about), &ui);
 
     refresh_fingerprint(&ui);
 

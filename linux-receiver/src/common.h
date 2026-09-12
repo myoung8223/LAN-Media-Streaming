@@ -15,6 +15,10 @@
 
 #include <stddef.h>
 
+/* ---- app identity ---- */
+#define LM_VERSION          "1.1.0"
+#define LM_REPO_URL         "https://github.com/myoung8223/LAN-Media-Streaming"
+
 /* ---- protocol constants (must match Protocol.cs / Protocol.kt) ---- */
 #define LM_MAGIC            "LANMED01"
 #define LM_DISCOVERY_MAGIC  "LANDISC1"
