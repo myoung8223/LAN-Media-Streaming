@@ -1,0 +1,29 @@
+# systemd *user* service for the LAN Media Receiver.
+#
+# Install to ~/.config/systemd/user/lanmedia-receiver.service, then:
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now lanmedia-receiver.service
+#   sudo loginctl enable-linger $USER      # so it runs at boot without a login
+#
+# The daemon needs the graphical session (X display + audio). If systemd's user
+# manager doesn't already have DISPLAY/XAUTHORITY, run once (or from your
+# session autostart):
+#   systemctl --user import-environment DISPLAY XAUTHORITY
+#
+# For a dedicated wall panel with auto-login, the XDG autostart entry in
+# autostart/lanmedia-receiver.desktop is simpler and inherits the session
+# environment automatically — use that instead of this unit if you prefer.
+
+[Unit]
+Description=LAN Media Receiver (screen + audio streaming)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/lanmedia-receiver
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

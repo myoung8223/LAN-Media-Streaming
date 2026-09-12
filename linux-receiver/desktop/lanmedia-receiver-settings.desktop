@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=LAN Media Receiver Settings
+Comment=Configure the LAN Media Receiver (name, port, password, buffer, TLS)
+Exec=lanmedia-receiver-settings
+Icon=video-display
+Terminal=false
+Categories=AudioVideo;Settings;

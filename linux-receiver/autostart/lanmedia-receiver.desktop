@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=LAN Media Receiver
+Comment=Listen for a sender and show the stream
+Exec=lanmedia-receiver
+Terminal=false
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
+Categories=AudioVideo;
+# Copy this file to ~/.config/autostart/ to start the receiver automatically
+# when the desktop session logs in (simplest option for an auto-login kiosk).
