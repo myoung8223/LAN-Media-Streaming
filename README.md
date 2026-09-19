@@ -54,9 +54,9 @@ self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
 Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
 `.zip` bundles its own `LICENSE.txt`, `THIRD-PARTY-NOTICES.txt`, and `README.txt`.
 
-- **LAN Media Sender — Windows:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
-  SHA-256: `a2d081f75892b5285825f4df122cd6d7d277fca46b9200388e6160a69bd2ef0b`
-- **LAN Media Receiver — Android:** [download .zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
+- **LAN Media Sender — Windows:** [download zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
+  SHA-256: `88b0a8fd87eed56a6a4ac60c200d08b4f226d34f4d5d39fe9562f10ea12b4796`
+- **LAN Media Receiver — Android:** [download zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
   SHA-256: `157d6df99f1eb4ce3ff279e7c4225f037e5d216be6422aa9e3d2d84d41f414e6`
 
 The **Linux receiver** has no prebuilt download — build it from source in
