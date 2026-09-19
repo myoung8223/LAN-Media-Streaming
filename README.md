@@ -22,6 +22,11 @@ self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
   30 fps). Resolution acts as a bounding box: the screen is scaled to fit it,
   aspect ratio preserved, and never upscaled beyond your display's own
   resolution.
+* **Multi-monitor aware.** On a PC with more than one display, pick which one to
+  capture from a dropdown on the sender (defaults to the main display).
+* **Flexible addressing.** Find a receiver by its announced name, or — when
+  broadcast discovery is blocked — by hostname (including mDNS `name.local`) or a
+  literal IP, so you never have to chase a DHCP-assigned address.
 * **Audio + video, in sync.** Opus audio muxed with the video and aligned on a
   shared playout clock.
 * **Tunable latency.** An adjustable playout buffer (20–500 ms, default 150)
@@ -76,11 +81,12 @@ Each folder has its own README with detailed build and run instructions.
 
 ## How it works
 
-The **sender** captures the primary display with DXGI Desktop Duplication (GPU,
-~2 ms/frame; falls back to GDI if unavailable), encodes it to H.264 with FFmpeg
-using a hardware encoder when one is present, captures system audio via WASAPI
-loopback and encodes it to Opus, then muxes both into a single TCP stream. The
-output resolution, bitrate, and frame rate are all adjustable on the sender.
+The **sender** captures a display with DXGI Desktop Duplication (GPU, ~2 ms/frame;
+falls back to GDI if unavailable) — the main display by default, or any monitor
+you pick on a multi-monitor PC — encodes it to H.264 with FFmpeg using a hardware
+encoder when one is present, captures system audio via WASAPI loopback and encodes
+it to Opus, then muxes both into a single TCP stream. The output resolution,
+bitrate, and frame rate are all adjustable on the sender.
 
 The **Android receiver** listens for the sender, decodes H.264 with Android's
 MediaCodec straight onto a full-screen surface, decodes Opus to an AudioTrack,
@@ -99,10 +105,6 @@ can be launched at login through the desktop's autostart for a hands-free panel.
 A small GTK settings app sets the name, port, password, buffer, and decode mode.
 It's a natural way to reuse an old laptop or mini-PC as a display.
 
-Panels announce their name over UDP so the sender can find them without you
-typing an IP; an IP fallback is available for networks where broadcast is
-blocked.
-
 While a receiver is listening, it sits quietly in the background and brings the
 full-screen live view forward on its own when a stream begins (waking the display
 if it was asleep), then drops back to standby when the stream ends — so a
@@ -113,6 +115,22 @@ without it, the app falls back to a full-screen notification the user taps, and 
 time. On Linux the same hands-free behavior comes from running the receiver in
 your desktop session (via autostart), where it opens the fullscreen window on
 connect.
+
+### Finding the receiver
+
+The sender can reach a panel three ways, in order of convenience:
+
+1. **By name (default).** Type the receiver's name (e.g. `Rcvr-482`); panels
+   announce it over UDP broadcast and the sender resolves the address for you.
+2. **By hostname (workaround).** If UDP discovery is blocked — some managed
+   networks filter broadcast, or the sender and panel sit on different subnets —
+   put the panel's hostname in the sender's **"Receiver IP or hostname"** field
+   instead. A machine hostname or an mDNS `hostname.local` both work (the sending
+   PC resolves it through normal DNS/mDNS), which also avoids hunting down a
+   panel's DHCP-assigned IP. On a Linux panel, installing `avahi-daemon` gives it
+   a dependable `hostname.local`.
+3. **By IP.** A literal IP address in the same field always works; pair it with a
+   DHCP reservation for a fixed, network-independent address.
 
 ### Ports (local network only)
 
@@ -134,8 +152,9 @@ connect.
      exactly like any other receiver.
 2. **Sender** — build `windows-sender/` (or run a published build), place the
    required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
-   README), enter the receiver's name or IP and the matching password, set your
-   video options (resolution, bitrate, frame rate — or keep the defaults), and
+   README), enter the receiver's name — or its hostname or IP (see *Finding the
+   receiver*) — and the matching password, choose the display to capture and your
+   video options (resolution, bitrate, frame rate — or keep the defaults), then
    click **Start streaming**.
 3. On the first encrypted connection the receiver's certificate is pinned;
    verify the fingerprint once and it's remembered thereafter.
