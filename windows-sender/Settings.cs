@@ -21,6 +21,7 @@ internal class Settings
     public int VideoBitrateMbps { get; set; } = 10;  // H.264 target bitrate (megabits/sec)
     public bool ShowCursor { get; set; } = true;     // composite the mouse cursor into video
     public bool IncludeAudioWithVideo { get; set; } = true; // mux system audio alongside video
+    public string DisplaySource { get; set; } = "";  // monitor DeviceName to capture; "" = primary
 
     private static string PathFile()
     {

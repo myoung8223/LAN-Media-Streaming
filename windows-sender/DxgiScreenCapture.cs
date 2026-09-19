@@ -35,7 +35,15 @@ internal sealed unsafe class DxgiScreenCapture : IScreenCapture
     public string Name => "GPU (DXGI)";
     public bool Lost { get; private set; }
 
-    public DxgiScreenCapture(bool showCursor)
+    public DxgiScreenCapture(bool showCursor) : this(showCursor, null) { }
+
+    /// <param name="targetDevice">
+    /// Monitor DeviceName (e.g. "\\.\DISPLAY2") to capture; null/empty = the primary
+    /// display (the output whose desktop origin is 0,0). If a named display isn't on
+    /// the primary GPU's adapter, this throws so the caller can fall back to GDI,
+    /// which can capture any monitor by its virtual-desktop coordinates.
+    /// </param>
+    public DxgiScreenCapture(bool showCursor, string? targetDevice)
     {
         _showCursor = showCursor;
 
@@ -45,8 +53,18 @@ internal sealed unsafe class DxgiScreenCapture : IScreenCapture
 
         using var dxgiDevice = _device.QueryInterface<IDXGIDevice>();
         using var adapter = dxgiDevice.GetAdapter();
-        adapter.EnumOutputs(0, out IDXGIOutput outputTmp).CheckError();
-        using var output = outputTmp;
+
+        // Find the requested output on this adapter (or the primary if none named).
+        IDXGIOutput? outputTmp = SelectOutput(adapter, targetDevice);
+        if (outputTmp == null)
+        {
+            if (!string.IsNullOrEmpty(targetDevice))
+                throw new ApplicationException(
+                    $"display '{targetDevice}' is not on the primary GPU (falling back to GDI)");
+            adapter.EnumOutputs(0, out outputTmp).CheckError();   // default: first output
+        }
+
+        using var output = outputTmp!;
         using var output1 = output.QueryInterface<IDXGIOutput1>();
 
         var rect = output.Description.DesktopCoordinates;
@@ -69,6 +87,29 @@ internal sealed unsafe class DxgiScreenCapture : IScreenCapture
             MiscFlags = ResourceOptionFlags.None,
         };
         _staging = _device.CreateTexture2D(desc);
+    }
+
+    /// <summary>
+    /// Return the output matching <paramref name="targetDevice"/> on this adapter, or
+    /// the primary output (desktop origin 0,0) when no device is named. Null if not
+    /// found (caller decides whether to default or fall back). The caller owns and
+    /// disposes the returned output.
+    /// </summary>
+    private static IDXGIOutput? SelectOutput(IDXGIAdapter adapter, string? targetDevice)
+    {
+        for (uint i = 0; ; i++)
+        {
+            Result r = adapter.EnumOutputs(i, out IDXGIOutput outp);
+            if (r.Failure || outp == null) break;
+            var d = outp.Description;
+            bool isPrimary = d.DesktopCoordinates.Left == 0 && d.DesktopCoordinates.Top == 0;
+            bool match = string.IsNullOrEmpty(targetDevice)
+                ? isPrimary
+                : string.Equals(d.DeviceName, targetDevice, StringComparison.OrdinalIgnoreCase);
+            if (match) return outp;
+            outp.Dispose();
+        }
+        return null;
     }
 
     public bool Acquire(out IntPtr bgra, out int stride)

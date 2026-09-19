@@ -13,6 +13,10 @@ internal class MainForm : Form
     private readonly CheckBox _encrypt = new() { Text = "Encrypt connection", AutoSize = true };
     private readonly CheckBox _compress = new() { Text = "Compress audio", AutoSize = true };
     private readonly CheckBox _video = new() { Text = "Stream video", AutoSize = true };
+    // Display source (which monitor to capture); label-less, right of the video toggle.
+    private readonly ComboBox _display = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+    // Parallel to _display's items: the DeviceName ("\\.\DISPLAYn") for each entry.
+    private readonly List<string> _displayDevices = new();
     // Free-form video knobs (replacing the old quality dropdown). Small centered
     // boxes; parsed, clamped, and reflected back at stream start.
     private readonly TextBox _vWidth   = new() { Width = 50, TextAlign = HorizontalAlignment.Center };
@@ -48,7 +52,7 @@ internal class MainForm : Form
 
     // App identity (shown in the title bar and the About box).
     private const string AppTitle = "LAN Media Sender";
-    private const string AppVersion = "1.1.0";
+    private const string AppVersion = "1.2.0";
     // Placeholder — update once the public repo exists.
     private const string GitHubUrl = "https://github.com/myoung8223/LAN-Media-Streaming";
 
@@ -106,7 +110,7 @@ internal class MainForm : Form
 
         // ---------------- LEFT COLUMN (connection + audio) ----------------
         Controls.Add(CL("Receiver name (set on receiver app)", leftX, 14)); Place(_name, leftX, 34);
-        Controls.Add(CL("Receiver IP address (fallback)", leftX, 72)); Place(_ip, leftX, 92);
+        Controls.Add(CL("Receiver IP or hostname (fallback)", leftX, 72)); Place(_ip, leftX, 92);
         Controls.Add(CL("Port", leftX, 130)); Place(_port, leftX, 150);
         Controls.Add(CL("Password (if set in receiver app)", leftX, 188)); Place(_password, leftX, 208);
         Controls.Add(CL("Audio source", leftX, 246));
@@ -129,8 +133,17 @@ internal class MainForm : Form
         Controls.Add(new Panel { Left = 336, Top = 14, Width = 1, Height = 369, BackColor = PanelC });
 
         // ---------------- RIGHT COLUMN (video + session) ----------------
-        _video.Top = 14; Controls.Add(_video);            // "Stream video" mode toggle (aligns with the left column's first label)
-        _video.Left = rightX + (colW - _video.PreferredSize.Width) / 2;
+        // "Stream video" toggle (left) + display-source dropdown filling the rest of the row.
+        _video.Top = 16; _video.Left = rightX; Controls.Add(_video);
+        PopulateDisplays();
+        int dispX = rightX + _video.PreferredSize.Width + 12;
+        _display.Left = dispX;
+        _display.Top = 13;
+        _display.Width = Math.Max(120, (rightX + colW) - dispX);
+        // Keep the drop-down list the same width as the box so it doesn't spill
+        // past the window edge; the shortened labels fit within this width.
+        _display.DropDownWidth = _display.Width;
+        Controls.Add(_display);
 
         // Three video knobs in one row: Resolution (W×H), Bitrate (Mbps), FPS.
         // Absolute layout, centered as a group within the right column.
@@ -216,6 +229,7 @@ internal class MainForm : Form
         _vHeight.Text = _settings.VideoMaxHeight.ToString();
         _vBitrate.Text = _settings.VideoBitrateMbps.ToString();
         _vFps.Text = _settings.VideoFps.ToString();
+        SelectDisplay(_settings.DisplaySource);
         _cursor.Checked = _settings.ShowCursor;
         _incAudio.Checked = _settings.IncludeAudioWithVideo;
         ApplyVideoOptionState(_video.Checked);
@@ -244,6 +258,7 @@ internal class MainForm : Form
         };
         _cursor.CheckedChanged += (_, __) => { _settings.ShowCursor = _cursor.Checked; _settings.Save(); };
         _incAudio.CheckedChanged += (_, __) => { _settings.IncludeAudioWithVideo = _incAudio.Checked; _settings.Save(); };
+        _display.SelectedIndexChanged += (_, __) => { _settings.DisplaySource = CurrentDisplayDevice(); _settings.Save(); };
         // Persist the (clamped) video knobs when focus leaves a field. The typed
         // text is left alone while editing; the final values are reflected back at
         // stream start (see Toggle → ReflectVideoFields).
@@ -282,7 +297,7 @@ internal class MainForm : Form
             tb.BackColor = PanelC; tb.ForeColor = TextC; tb.BorderStyle = BorderStyle.FixedSingle;
         }
         _vX.ForeColor = MutedC;
-        foreach (var combo in new[] { _source, _bitrate })
+        foreach (var combo in new[] { _source, _bitrate, _display })
         {
             combo.BackColor = PanelC; combo.ForeColor = TextC; combo.FlatStyle = FlatStyle.Flat;
         }
@@ -333,10 +348,54 @@ internal class MainForm : Form
             tb.ForeColor = on ? TextC : DisabledC;
         }
         _vX.ForeColor = on ? MutedC : DisabledC;
+        _display.Enabled = on;
         _cursor.AutoCheck = on;
         _incAudio.AutoCheck = on;
         _cursor.ForeColor = on ? TextC : DisabledC;
         _incAudio.ForeColor = on ? TextC : DisabledC;
+    }
+
+    /// <summary>Fill the display dropdown from the current monitors (primary marked).</summary>
+    private void PopulateDisplays()
+    {
+        _display.Items.Clear();
+        _displayDevices.Clear();
+        var screens = Screen.AllScreens;
+        for (int i = 0; i < screens.Length; i++)
+        {
+            var s = screens[i];
+            // Colon (not en dash) to keep it short; mark only the main display,
+            // using Windows' "(Main)" wording — anything unmarked is secondary.
+            string label = $"Display {i + 1}: {s.Bounds.Width}×{s.Bounds.Height}"
+                         + (s.Primary ? " (Main)" : "");
+            _display.Items.Add(label);
+            _displayDevices.Add(s.DeviceName);
+        }
+        if (_display.Items.Count == 0)   // extremely unlikely; keep the control usable
+        {
+            _display.Items.Add("Primary display");
+            _displayDevices.Add("");
+        }
+    }
+
+    /// <summary>Select the dropdown entry for a saved DeviceName, else the primary, else the first.</summary>
+    private void SelectDisplay(string deviceName)
+    {
+        int idx = string.IsNullOrEmpty(deviceName) ? -1 : _displayDevices.IndexOf(deviceName);
+        if (idx < 0)
+        {
+            var screens = Screen.AllScreens;
+            for (int i = 0; i < screens.Length; i++)
+                if (screens[i].Primary) { idx = i; break; }
+        }
+        _display.SelectedIndex = idx >= 0 ? idx : (_display.Items.Count > 0 ? 0 : -1);
+    }
+
+    /// <summary>The DeviceName of the currently selected display ("" if none/primary).</summary>
+    private string CurrentDisplayDevice()
+    {
+        int i = _display.SelectedIndex;
+        return (i >= 0 && i < _displayDevices.Count) ? _displayDevices[i] : "";
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -438,7 +497,7 @@ internal class MainForm : Form
         _streamer = _video.Checked
             ? new VideoStreamer(name, ip, port, _password.Text, _encrypt.Checked, _settings.PinnedFingerprint,
                 CurrentWidth(), CurrentHeight(), CurrentFps(), (long)CurrentBitrateMbps() * 1_000_000,
-                _cursor.Checked, _incAudio.Checked, BitrateForIndex(_bitrate.SelectedIndex))
+                _cursor.Checked, _incAudio.Checked, BitrateForIndex(_bitrate.SelectedIndex), CurrentDisplayDevice())
             : new AudioStreamer(name, ip, port, _password.Text, system, _encrypt.Checked,
                 _settings.PinnedFingerprint, _compress.Checked, BitrateForIndex(_bitrate.SelectedIndex));
         _streamer.Status += OnStatus;
@@ -594,6 +653,7 @@ internal class MainForm : Form
         _settings.VideoBitrateMbps = CurrentBitrateMbps();
         _settings.ShowCursor = _cursor.Checked;
         _settings.IncludeAudioWithVideo = _incAudio.Checked;
+        _settings.DisplaySource = CurrentDisplayDevice();
         _settings.OpusBitrate = BitrateForIndex(_bitrate.SelectedIndex);
         _settings.Save();
     }

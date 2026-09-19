@@ -37,6 +37,7 @@ internal sealed class VideoStreamer : IStreamer
     private readonly bool _showCursor;
     private readonly bool _includeAudio;
     private readonly int _audioBitrate;
+    private readonly string _sourceDevice;   // monitor DeviceName to capture; "" = primary
 
     private volatile bool _running;
     private Thread? _netThread;
@@ -51,13 +52,14 @@ internal sealed class VideoStreamer : IStreamer
 
     public VideoStreamer(string name, string ip, int port, string password, bool useTls, string pinnedFp,
                          int maxWidth, int maxHeight, int fps, long videoBitRate,
-                         bool showCursor, bool includeAudio, int audioBitrate)
+                         bool showCursor, bool includeAudio, int audioBitrate, string sourceDevice)
     {
         _name = name ?? ""; _ip = ip; _port = port; _password = password;
         _useTls = useTls; _pinnedFp = pinnedFp ?? "";
         _maxWidth = maxWidth; _maxHeight = maxHeight; _fps = fps; _videoBitRate = videoBitRate;
         _showCursor = showCursor;
         _includeAudio = includeAudio; _audioBitrate = audioBitrate;
+        _sourceDevice = sourceDevice ?? "";
     }
 
     public void Start()
@@ -98,7 +100,7 @@ internal sealed class VideoStreamer : IStreamer
             try
             {
                 _captureNote = "";
-                return new DxgiScreenCapture(_showCursor);
+                return new DxgiScreenCapture(_showCursor, _sourceDevice);
             }
             catch (Exception ex)
             {
@@ -108,7 +110,7 @@ internal sealed class VideoStreamer : IStreamer
         }
         _captureNote = " · GDI fallback: " + (last?.Message ?? "?");
         Status?.Invoke("GPU capture unavailable — using GDI (" + (last?.Message ?? "?") + ")");
-        return new GdiScreenCapture(_showCursor);
+        return new GdiScreenCapture(_showCursor, _sourceDevice);
     }
 
     public void Stop()

@@ -22,10 +22,21 @@ internal sealed class GdiScreenCapture : IScreenCapture
     public string Name => "GDI";
     public bool Lost => false;
 
-    public GdiScreenCapture(bool showCursor)
+    public GdiScreenCapture(bool showCursor) : this(showCursor, null) { }
+
+    /// <param name="targetDevice">
+    /// Monitor DeviceName to capture; null/empty = the primary display. GDI can grab
+    /// any monitor by its virtual-desktop coordinates, regardless of which GPU drives
+    /// it, so this is the reliable fallback for the multi-GPU case.
+    /// </param>
+    public GdiScreenCapture(bool showCursor, string? targetDevice)
     {
         _showCursor = showCursor;
-        _bounds = Screen.PrimaryScreen?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
+        Screen? scr = null;
+        if (!string.IsNullOrEmpty(targetDevice))
+            scr = System.Array.Find(Screen.AllScreens, s => s.DeviceName == targetDevice);
+        scr ??= Screen.PrimaryScreen;
+        _bounds = scr?.Bounds ?? new Rectangle(0, 0, 1920, 1080);
         Width = _bounds.Width & ~1;
         Height = _bounds.Height & ~1;
         _bmp = new Bitmap(Width, Height, PixelFormat.Format32bppArgb);
