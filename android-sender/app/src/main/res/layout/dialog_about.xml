@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/panel"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name"
+        android:textColor="@color/text"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvAboutVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="Version"
+        android:textColor="@color/muted"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Mirror this device's screen and audio to a LAN Media receiver, over your local network only."
+        android:textColor="@color/text"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Design guidance and testing by Mike Young.\nProgrammed by Anthropic Claude (Opus 4.8)."
+        android:textColor="@color/text"
+        android:textSize="14sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Released under the MIT License. Uses Android MediaCodec/MediaProjection and AndroidX/Material components under their own licenses; see THIRD-PARTY-NOTICES."
+        android:textColor="@color/muted"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvAboutLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="github.com/myoung8223/LAN-Media-Streaming"
+        android:textColor="@color/accent"
+        android:textSize="13sp"
+        android:autoLink="web"
+        android:linksClickable="true" />
+
+    <Button
+        android:id="@+id/btnAboutClose"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end"
+        android:layout_marginTop="12dp"
+        android:text="Close" />
+</LinearLayout>
