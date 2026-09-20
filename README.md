@@ -1,29 +1,34 @@
 # <img src="images/icon.png" alt="LAN Media Streaming icon" height="60" align="middle" />&nbsp;&nbsp;LAN Media Streaming
 
-Low-latency screen and audio streaming from a Windows PC to an Android panel or
-Linux PC, entirely over your local network. No cloud, no accounts, nothing
-leaves the building.
+Low-latency screen and audio streaming from a Windows PC or Android device to an
+Android panel or Linux PC, entirely over your local network. No cloud, no
+accounts, nothing leaves the building.
 
-Built for classrooms — mirror a teacher's Windows PC onto a wall-mounted
-Android panel or a repurposed PC — but useful anywhere you want a private,
-self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
+Built for classrooms — mirror a teacher's Windows PC or Chromebook onto a
+wall-mounted Android panel or a repurposed PC — but useful anywhere you want a
+private, self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
 
 * **LAN-only.** Discovery, control, and media all stay on your subnet. No
   internet, no telemetry.
 * **Encrypted.** Optional TLS with trust-on-first-use certificate pinning.
-* **Hardware-accelerated.** H.264 via AMD AMF or Intel Quick Sync on the sender,
-  with a software (libx264) fallback.
+* **Windows or Android senders.** Stream from a Windows PC, or from an Android
+  device — a phone, tablet, or a Chromebook that runs Android apps — using
+  MediaProjection screen capture and MediaCodec H.264. Handy for casting a
+  Chromebook to a classroom panel where no PC is present.
+* **Hardware-accelerated.** On the Windows sender, H.264 via AMD AMF or Intel
+  Quick Sync with a software (libx264) fallback; the Android sender encodes with
+  MediaCodec on the device's own hardware.
 * **Android or Linux receivers.** Display on a wall-mounted Android panel or a
   Linux PC. The Linux receiver is a small C service (SDL2 + FFmpeg + OpenSSL)
   with VAAPI GPU decode and automatic software fallback — good for turning an
   old laptop or mini-PC into a panel.
 * **Configurable video.** Set the output resolution, H.264 bitrate, and frame
-  rate (up to 60 fps) on the sender, or leave the defaults (1920×1080, 10 Mbps,
-  30 fps). Resolution acts as a bounding box: the screen is scaled to fit it,
-  aspect ratio preserved, and never upscaled beyond your display's own
+  rate (up to 60 fps) on either sender, or leave the defaults (1920×1080,
+  10 Mbps, 30 fps). Resolution acts as a bounding box: the screen is scaled to
+  fit it, aspect ratio preserved, and never upscaled beyond the source's own
   resolution.
-* **Multi-monitor aware.** On a PC with more than one display, pick which one to
-  capture from a dropdown on the sender (defaults to the main display).
+* **Multi-monitor aware.** On a Windows PC with more than one display, pick which
+  one to capture from a dropdown on the sender (defaults to the main display).
 * **Flexible addressing.** Find a receiver by its announced name, or — when
   broadcast discovery is blocked — by hostname (including mDNS `name.local`) or a
   literal IP, so you never have to chase a DHCP-assigned address.
@@ -35,7 +40,7 @@ self-hosted "wireless HDMI" over Wi-Fi or Ethernet.
   The minimum tracks the stream's frame rate (20 ms at 60 fps, 40 ms at 30 fps)
   so playback never drops below a single frame.
 * **Hands-free display.** The panel brings the live view up on its own the moment
-  the PC starts streaming — waking the panel if it was asleep — then returns to
+  a sender starts streaming — waking the panel if it was asleep — then returns to
   standby when the stream stops. No touching the panel.
 * **FOSS.** MIT-licensed (see [LICENSE](LICENSE) and
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)).
@@ -56,6 +61,8 @@ Prebuilt binaries are hosted off-GitHub (not stored in this repository). Each
 
 - **LAN Media Sender — Windows:** [download zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Windows_Binary.zip) — also requires FFmpeg 7.x, obtained separately (see the README inside the zip).
   SHA-256: `88b0a8fd87eed56a6a4ac60c200d08b4f226d34f4d5d39fe9562f10ea12b4796`
+- **LAN Media Sender — Android:** [download zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Sender_Android_Binary.zip) — Android 10 (API 29) or newer.
+  SHA-256: `2e7f77fed235131e84f9c34dcb72cbc085febe29f6a464ed04ec7f2abe0fd914`
 - **LAN Media Receiver — Android:** [download zip](https://www.mikesshorts.com/misc/lms/LAN_Media_Receiver_Android_Binary.zip)
   SHA-256: `157d6df99f1eb4ce3ff279e7c4225f037e5d216be6422aa9e3d2d84d41f414e6`
 
@@ -73,6 +80,7 @@ Prefer to build it yourself? See the per-app folders below.
 
 ```
 windows-sender/    LAN Media Sender — Windows (.NET 8 / WinForms) capture-and-stream app
+android-sender/    LAN Media Sender — Android (Kotlin) screen + audio capture app
 android-receiver/  LAN Media Receiver — Android app that displays the stream
 linux-receiver/    LAN Media Receiver — Linux (C / SDL2 / FFmpeg) service + GTK settings app
 ```
@@ -81,14 +89,24 @@ Each folder has its own README with detailed build and run instructions.
 
 ## How it works
 
-The **sender** captures a display with DXGI Desktop Duplication (GPU, ~2 ms/frame;
-falls back to GDI if unavailable) — the main display by default, or any monitor
-you pick on a multi-monitor PC — encodes it to H.264 with FFmpeg using a hardware
-encoder when one is present, captures system audio via WASAPI loopback and encodes
-it to Opus, then muxes both into a single TCP stream. The output resolution,
-bitrate, and frame rate are all adjustable on the sender.
+The **Windows sender** captures a display with DXGI Desktop Duplication (GPU,
+~2 ms/frame; falls back to GDI if unavailable) — the main display by default, or
+any monitor you pick on a multi-monitor PC — encodes it to H.264 with FFmpeg
+using a hardware encoder when one is present, captures system audio via WASAPI
+loopback and encodes it to Opus, then muxes both into a single TCP stream. The
+output resolution, bitrate, and frame rate are all adjustable on the sender.
 
-The **Android receiver** listens for the sender, decodes H.264 with Android's
+The **Android sender** does the equivalent on an Android device: it captures the
+screen with MediaProjection into a VirtualDisplay, encodes to H.264 with
+MediaCodec (hardware-backed on virtually all devices), optionally captures
+playback audio via AudioPlaybackCapture and encodes it to Opus, and muxes both
+into the same TCP stream. It speaks the identical protocol, so any receiver
+treats it exactly like the Windows sender. It targets Android 10 (API 29) or
+newer and is aimed at Chromebooks and tablets that run Android apps. Android
+requires an on-screen consent prompt each time capture starts; this is a
+platform requirement and cannot be bypassed.
+
+The **Android receiver** listens for a sender, decodes H.264 with Android's
 MediaCodec straight onto a full-screen surface, decodes Opus to an AudioTrack,
 and keeps the two in sync on a shared timeline with a small, adjustable buffered
 delay (the receiver's **Playout buffer** setting — lower for wired/low-latency,
@@ -118,7 +136,7 @@ connect.
 
 ### Finding the receiver
 
-The sender can reach a panel three ways, in order of convenience:
+A sender can reach a panel three ways, in order of convenience:
 
 1. **By name (default).** Type the receiver's name (e.g. `Rcvr-482`); panels
    announce it over UDP broadcast and the sender resolves the address for you.
@@ -126,7 +144,7 @@ The sender can reach a panel three ways, in order of convenience:
    networks filter broadcast, or the sender and panel sit on different subnets —
    put the panel's hostname in the sender's **"Receiver IP or hostname"** field
    instead. A machine hostname or an mDNS `hostname.local` both work (the sending
-   PC resolves it through normal DNS/mDNS), which also avoids hunting down a
+   device resolves it through normal DNS/mDNS), which also avoids hunting down a
    panel's DHCP-assigned IP. On a Linux panel, installing `avahi-daemon` gives it
    a dependable `hostname.local`.
 3. **By IP.** A literal IP address in the same field always works; pair it with a
@@ -150,12 +168,18 @@ The sender can reach a panel three ways, in order of convenience:
      `make`; see its README), run the settings app to set the name/password, and
      optionally add it to your desktop's autostart. It appears to the sender
      exactly like any other receiver.
-2. **Sender** — build `windows-sender/` (or run a published build), place the
-   required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
-   README), enter the receiver's name — or its hostname or IP (see *Finding the
-   receiver*) — and the matching password, choose the display to capture and your
-   video options (resolution, bitrate, frame rate — or keep the defaults), then
-   click **Start streaming**.
+2. **Sender** — pick one:
+   - *Windows:* build `windows-sender/` (or run a published build), place the
+     required FFmpeg 7.1 shared DLLs next to the executable (see that folder's
+     README), enter the receiver's name — or its hostname or IP (see *Finding the
+     receiver*) — and the matching password, choose the display to capture and
+     your video options (resolution, bitrate, frame rate — or keep the defaults),
+     then click **Start streaming**.
+   - *Android:* build and install `android-sender/` on an Android 10+ device — a
+     phone, tablet, or a Chromebook that runs Android apps — open it, enter the
+     receiver's name/hostname/IP and password, set your video options and whether
+     to include device audio, tap **Start streaming**, and grant the
+     screen-capture prompt when it appears.
 3. On the first encrypted connection the receiver's certificate is pinned;
    verify the fingerprint once and it's remembered thereafter.
 
@@ -183,6 +207,12 @@ Developed and tested on a GMKtec NucBox G5 (Intel N95 CPU), streaming to a
 Samsung Galaxy Tab A6, simulating a Newline Android-based interactive panel. Any
 Windows 10/11 PC with a hardware H.264 encoder (or enough CPU for the software
 fallback) and any Android 8.0+ display should work.
+
+The **Android sender** targets Android 10+ (phones, tablets, and Chromebooks
+that run Android apps) and was tested on an Android tablet. Note that a
+Chromebook must run a recent enough version of Android to meet the API 29
+minimum; some older, end-of-life Chromebooks are stuck on Android 9 and cannot
+run it.
 
 The **Linux receiver** targets x86-64 Linux and was developed on Lubuntu 24.04.
 It runs on modest, repurposed hardware — old laptops and mini-PCs — using VAAPI
