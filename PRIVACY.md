@@ -82,6 +82,6 @@ with a revised effective date.
 
 ## Contact
 
-Questions about this policy can be sent to: **[your contact email]**
+Questions about this policy can be sent to: <mgyoung2022@gmail.com>
 
 Project repository: https://github.com/myoung8223/LAN-Media-Streaming
